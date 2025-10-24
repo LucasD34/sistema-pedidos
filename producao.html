@@ -40,7 +40,34 @@
       border-radius: 10px;
       padding: 14px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
     }
+    form .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    input, textarea, button {
+      padding: 10px;
+      border: 1px solid #d6dde6;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    textarea { resize: vertical; }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn.secondary {
+      background: #e6ebf0;
+      color: #062436;
+    }
+    .btn:hover { opacity: 0.9; }
     .list { margin-top: 12px; }
     .item {
       display: flex;
@@ -70,6 +97,27 @@
       </div>
     </header>
 
+    <!-- Formulário -->
+    <section class="card">
+      <strong>📋 Registrar novo pedido</strong>
+      <form id="formPedido" autocomplete="off">
+        <div class="row">
+          <input id="encarregada" placeholder="👩‍🏭 Nome da encarregada (obrigatório)" required />
+          <input id="peca" placeholder="🧩 Nome da peça (obrigatório)" required />
+        </div>
+        <div class="row">
+          <input id="referencia" placeholder="📌 Referência (obrigatório)" required />
+        </div>
+        <div class="row">
+          <textarea id="observacao" placeholder="📝 Observação (opcional)" rows="2"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" type="submit">📨 Enviar pedido</button>
+          <button class="btn secondary" type="button" id="btnReset">🧼 Limpar</button>
+        </div>
+      </form>
+    </section>
+
     <!-- Lista de pedidos -->
     <section>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -86,7 +134,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved } 
+    import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update } 
       from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -103,8 +151,10 @@
     const db = getDatabase(app);
     const pedidosRef = ref(db, "/pedidos");
 
+    const form = document.getElementById("formPedido");
     const listaEl = document.getElementById("lista");
     const contador = document.getElementById("contador");
+    const btnReset = document.getElementById("btnReset");
     const pageLoadTime = Date.now();
 
     function playDeepBeep() {
@@ -125,7 +175,6 @@
       } catch (e) { console.warn("Erro ao tocar som:", e); }
     }
 
-    // Renderiza cada pedido
     function renderItem(key, data) {
       const div = document.createElement("div");
       div.className = "item";
@@ -145,7 +194,40 @@
       contador.textContent = listaEl.children.length + " pedidos";
     }
 
-    // Atualiza pedidos adicionados
+    // Envio do formulário
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const encarregada = document.getElementById("encarregada").value.trim();
+      const peca = document.getElementById("peca").value.trim();
+      const referencia = document.getElementById("referencia").value.trim();
+      const observacao = document.getElementById("observacao").value.trim();
+
+      if (!encarregada || !peca || !referencia) return alert("⚠️ Preencha todos os campos obrigatórios.");
+
+      const novo = {
+        encarregada,
+        peca,
+        referencia,
+        observacao,
+        createdAt: Date.now(),
+        enviado: false
+      };
+
+      try {
+        await push(pedidosRef, novo);
+        form.reset();
+        document.getElementById("encarregada").focus();
+      } catch (err) {
+        alert("Erro ao enviar pedido: " + err.message);
+      }
+    });
+
+    btnReset.addEventListener("click", () => {
+      form.reset();
+      document.getElementById("encarregada").focus();
+    });
+
+    // Pedidos adicionados
     onChildAdded(pedidosRef, (snap) => {
       const key = snap.key;
       const val = snap.val();
@@ -155,7 +237,7 @@
       if (val.createdAt && val.createdAt > pageLoadTime) playDeepBeep();
     });
 
-    // Atualiza pedidos alterados (ex: enviado)
+    // Pedidos alterados (ex: enviado)
     onChildChanged(pedidosRef, (snap) => {
       const key = snap.key;
       const val = snap.val();
@@ -165,14 +247,17 @@
       }
     });
 
-    // Remove pedidos
+    // Pedidos removidos
     onChildRemoved(pedidosRef, (snap) => {
       const el = document.getElementById("i-" + snap.key);
       if (el) el.remove();
       updateCounter();
     });
 
+    document.getElementById("encarregada").focus();
+
   </script>
 </body>
 </html>
+
 
