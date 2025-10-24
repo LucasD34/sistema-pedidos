@@ -2,102 +2,253 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Estoque - Sistema de Pedidos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>📦 Painel do Estoque — Pedidos Internos</title>
   <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #fff;
+      --accent: #0b63d6;
+      --muted: #556;
+      --success: #3a9b3f;
+    }
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f7fb;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
       margin: 0;
-      padding: 20px;
+      padding: 18px;
+      color: #062436;
+    }
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
     h1 {
-      color: #0b63d6;
-      text-align: center;
+      font-size: 22px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    }
+    input, textarea, button {
+      padding: 10px;
+      border: 1px solid #d6dde6;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .list {
+      margin-top: 12px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #eef4fb;
+      margin-bottom: 10px;
       background: #fff;
-      margin-top: 20px;
+      transition: all 0.3s ease;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: center;
+    .item.enviado {
+      opacity: 0.6;
+      background: #f0f7f1;
+      border-color: #d3e7d4;
     }
-    th {
-      background-color: #0b63d6;
-      color: white;
+    .meta {
+      font-size: 13px;
+      color: var(--muted);
     }
-    button {
-      padding: 6px 10px;
-      background-color: #0b63d6;
-      color: white;
+    .btn {
+      background: var(--accent);
+      color: #fff;
       border: none;
-      border-radius: 5px;
+      padding: 8px 12px;
+      border-radius: 8px;
       cursor: pointer;
+      transition: background 0.2s;
     }
-    button:hover {
-      background-color: #094fa5;
+    .btn.secondary {
+      background: #e6ebf0;
+      color: #062436;
+    }
+    .btn.small {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .btn:hover {
+      opacity: 0.9;
     }
   </style>
 </head>
 <body>
-  <h1>Estoque - Pedidos Recebidos</h1>
+  <div class="container">
+    <!-- Cabeçalho -->
+    <header>
+      <h1>📦 Painel do Estoque</h1>
+      <div style="font-size:14px;color:var(--muted)">
+        <strong id="contador">0 pedidos</strong>
+      </div>
+    </header>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Ref.</th>
-        <th>Nome</th>
-        <th>Quantidade</th>
-        <th>Data do Envio</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaPedidos"></tbody>
-  </table>
+    <!-- Lista de pedidos -->
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong>Pedidos Recebidos</strong>
+        <input id="buscar" placeholder="🔍 Buscar por peça ou encarregada" style="max-width:260px" />
+      </div>
+      <div id="lista" class="list"></div>
+    </section>
 
+    <footer style="margin-top:16px;font-size:13px;color:var(--muted)">
+      Sincronização em tempo real via Firebase Realtime Database.
+    </footer>
+  </div>
+
+  <!-- Firebase -->
   <script type="module">
+    // ====== IMPORTS ======
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, onChildAdded, onChildRemoved, onChildChanged, update, remove } 
+      from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
+    // ====== CONFIGURAÇÃO DO FIREBASE ======
     const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_DOMINIO.firebaseapp.com",
-      databaseURL: "https://SEU_DATABASE.firebaseio.com",
-      projectId: "SEU_PROJETO_ID",
-      storageBucket: "SEU_BUCKET.appspot.com",
-      messagingSenderId: "SEU_MENSAGEM_ID",
-      appId: "SEU_APP_ID"
+      apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
+      authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
+      databaseURL: "https://sistema-de-pedidos-208dd-default-rtdb.firebaseio.com",
+      projectId: "sistema-de-pedidos-208dd",
+      storageBucket: "sistema-de-pedidos-208dd.firebasestorage.app",
+      messagingSenderId: "728239911093",
+      appId: "1:728239911093:web:fdb33f1ea4a4d314738efc"
     };
 
+    // Inicializa Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const pedidosRef = ref(db, 'pedidos');
-    const tabela = document.getElementById('tabelaPedidos');
+    const pedidosRef = ref(db, "/pedidos");
 
-    onValue(pedidosRef, (snapshot) => {
-      tabela.innerHTML = "";
-      snapshot.forEach((child) => {
-        const pedido = child.val();
-        const id = child.key;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${pedido.ref || ''}</td>
-          <td>${pedido.nome || ''}</td>
-          <td>${pedido.quantidade || ''}</td>
-          <td>${pedido.dataEnvio ? new Date(pedido.dataEnvio).toLocaleString('pt-BR') : ''}</td>
-          <td><button onclick="marcarComoEnviado('${id}')">Marcar como Enviado</button></td>
-        `;
-        tabela.appendChild(tr);
+    // ====== ELEMENTOS DOM ======
+    const listaEl = document.getElementById("lista");
+    const contador = document.getElementById("contador");
+    const buscar = document.getElementById("buscar");
+    const pageLoadTime = Date.now();
+
+    // ====== FUNÇÃO DE SOM GRAVE ======
+    function playDeepBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = ctx.currentTime;
+        for (let i = 0; i < 3; i++) {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = "square";
+          o.frequency.value = 160; // tom mais grave
+          g.gain.setValueAtTime(0.0001, now + i * 0.7);
+          g.gain.exponentialRampToValueAtTime(1.0, now + i * 0.7 + 0.05);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.7 + 0.6);
+          o.connect(g); g.connect(ctx.destination);
+          o.start(now + i * 0.7); o.stop(now + i * 0.7 + 0.6);
+        }
+      } catch (e) { console.warn("Erro ao tocar som:", e); }
+    }
+
+    // ====== FUNÇÃO DE RENDERIZAÇÃO ======
+    function renderItem(key, data) {
+      const div = document.createElement("div");
+      div.className = "item" + (data.enviado ? " enviado" : "");
+      div.id = "i-" + key;
+
+      const enviado = data.enviado ? ` • 📦 Enviado em ${new Date(data.dataEnvio).toLocaleString()}` : "";
+      div.innerHTML = `
+        <div style="min-width:0">
+          <div style="font-weight:700">${data.peca}</div>
+          <div class="meta">👩‍🏭 ${data.encarregada}</div>
+          <div class="meta">🕒 Pedido feito em ${new Date(data.createdAt).toLocaleString()}${enviado}</div>
+          ${data.observacao ? `<div class="meta">📝 ${data.observacao}</div>` : ""}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div class="meta">🆔 ${key}</div>
+          <div style="display:flex;gap:6px">
+            ${!data.enviado ? `<button class="btn small" data-key="${key}" data-action="enviar">📦 Marcar como Enviado</button>` : ""}
+            <button class="btn secondary small" data-key="${key}" data-action="del">🗑️ Apagar</button>
+          </div>
+        </div>
+      `;
+      return div;
+    }
+
+    // ====== FUNÇÃO PARA ATUALIZAR CONTADOR ======
+    function updateCounter() {
+      contador.textContent = listaEl.children.length + " pedidos";
+    }
+
+    // ====== BUSCA ======
+    buscar.addEventListener("input", () => {
+      const q = buscar.value.trim().toLowerCase();
+      Array.from(listaEl.children).forEach(node => {
+        const txt = node.textContent.toLowerCase();
+        node.style.display = (q ? txt.includes(q) : true) ? "flex" : "none";
       });
+      updateCounter();
     });
 
-    window.marcarComoEnviado = (id) => {
-      remove(ref(db, 'pedidos/' + id));
-    };
+    // ====== EVENTOS DO FIREBASE ======
+    onChildAdded(pedidosRef, (snap) => {
+      const key = snap.key;
+      const val = snap.val();
+      if (document.getElementById("i-" + key)) return;
+      listaEl.insertBefore(renderItem(key, val), listaEl.firstChild);
+      updateCounter();
+      if (val.createdAt && val.createdAt > pageLoadTime) playDeepBeep();
+    });
+
+    onChildRemoved(pedidosRef, (snap) => {
+      const el = document.getElementById("i-" + snap.key);
+      if (el) el.remove();
+      updateCounter();
+    });
+
+    onChildChanged(pedidosRef, (snap) => {
+      const el = document.getElementById("i-" + snap.key);
+      if (el) el.replaceWith(renderItem(snap.key, snap.val()));
+    });
+
+    // ====== CLIQUES EM BOTÕES ======
+    listaEl.addEventListener("click", async (ev) => {
+      const btn = ev.target.closest("button");
+      if (!btn) return;
+      const key = btn.dataset.key;
+      const action = btn.dataset.action;
+
+      if (action === "del") {
+        if (confirm("🗑️ Apagar este pedido?")) {
+          await remove(ref(db, "/pedidos/" + key));
+        }
+      }
+
+      if (action === "enviar") {
+        if (confirm("📦 Confirmar envio deste pedido?")) {
+          await update(ref(db, "/pedidos/" + key), {
+            enviado: true,
+            dataEnvio: Date.now()
+          });
+        }
+      }
+    });
   </script>
 </body>
 </html>
