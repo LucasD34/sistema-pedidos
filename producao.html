@@ -1,255 +1,89 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>🧰 Pedidos — Produção</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Produção</title>
   <style>
-    :root {
-      --bg: #f3f6fa;
-      --card: #fff;
-      --accent: #0b63d6;
-      --muted: #556;
-    }
     body {
-      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
       margin: 0;
-      padding: 18px;
-      color: #062436;
+      padding: 0;
     }
-    .container {
-      max-width: 950px;
-      margin: 0 auto;
+    nav {
+      background:#0b63d6;
+      padding: 10px;
+      color: white;
     }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
+    nav a {
+      margin-right: 20px;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
     }
     h1 {
-      font-size: 22px;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      text-align: center;
+      margin-top: 20px;
     }
-    .card {
-      background: var(--card);
-      border-radius: 10px;
-      padding: 14px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-    }
-    form .row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    input, textarea, button {
-      padding: 10px;
-      border: 1px solid #d6dde6;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    textarea { resize: vertical; }
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn.secondary {
-      background: #e6ebf0;
-      color: #062436;
-    }
-    .btn:hover { opacity: 0.9; }
-    .list { margin-top: 12px; }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #eef4fb;
-      margin-bottom: 10px;
+    .pedido {
       background: #fff;
-      transition: all 0.3s ease;
+      padding: 15px;
+      margin: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 8px;
     }
-    .meta {
-      font-size: 13px;
-      color: var(--muted);
+    .data-hora {
+      font-weight: bold;
+      color: #0b63d6;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Cabeçalho -->
-    <header>
-      <h1>🧰 Pedidos — Produção</h1>
-      <div style="font-size:14px;color:var(--muted)">
-        <strong id="contador">0 pedidos</strong>
-      </div>
-    </header>
 
-    <!-- Formulário -->
-    <section class="card">
-      <strong>📋 Registrar novo pedido</strong>
-      <form id="formPedido" autocomplete="off">
-        <div class="row">
-          <input class="left" id="encarregada" placeholder="👩‍🏭 Nome da encarregada (obrigatório)" required />
-          <input class="right" id="peca" placeholder="🧩 Nome da peça (obrigatório)" required />
-        </div>
-        <div class="row">
-          <input class="right" id="referencia" placeholder="📌 Referência (obrigatório)" required />
-        </div>
-        <div class="row">
-          <textarea id="observacao" placeholder="📝 Observação (opcional)" rows="2"></textarea>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn" type="submit">📨 Enviar pedido</button>
-          <button class="btn secondary" type="button" id="btnReset">🧼 Limpar</button>
-        </div>
-      </form>
-    </section>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="producao.html">Produção</a>
+    <a href="estoque.html">Estoque</a>
+  </nav>
 
-    <!-- Lista local (visualização rápida) -->
-    <section style="margin-top:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <strong>📦 Pedidos enviados</strong>
-      </div>
-      <div id="lista" class="list"></div>
-    </section>
+  <h1>Produção</h1>
 
-    <footer style="margin-top:16px;font-size:13px;color:var(--muted)">
-      Sincronização em tempo real via Firebase Realtime Database.
-    </footer>
+  <!-- Exemplo de pedidos -->
+  <div class="pedido">
+    <p>Pedido #001</p>
+    <p>Cliente: João</p>
+    <p class="data-hora" id="pedido1"></p>
   </div>
 
-  <!-- Firebase -->
-  <script type="module">
-    // ====== IMPORTS ======
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, onChildRemoved } 
-      from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  <div class="pedido">
+    <p>Pedido #002</p>
+    <p>Cliente: Maria</p>
+    <p class="data-hora" id="pedido2"></p>
+  </div>
 
-    // ====== CONFIGURAÇÃO DO FIREBASE ======
-    const firebaseConfig = {
-      apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
-      authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
-      databaseURL: "https://sistema-de-pedidos-208dd-default-rtdb.firebaseio.com",
-      projectId: "sistema-de-pedidos-208dd",
-      storageBucket: "sistema-de-pedidos-208dd.firebasestorage.app",
-      messagingSenderId: "728239911093",
-      appId: "1:728239911093:web:fdb33f1ea4a4d314738efc"
-    };
+  <script>
+    function atualizarDataHoraPedidos() {
+      const pedidos = [1,2]; // IDs dos pedidos
+      const now = new Date();
+      const dia = String(now.getDate()).padStart(2, '0');
+      const mes = String(now.getMonth() + 1).padStart(2, '0');
+      const ano = now.getFullYear();
+      const hora = String(now.getHours()).padStart(2, '0');
+      const minuto = String(now.getMinutes()).padStart(2, '0');
+      const segundo = String(now.getSeconds()).padStart(2, '0');
 
-    // Inicializa Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const pedidosRef = ref(db, "/pedidos");
+      const dataHoraFormatada = `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
 
-    // ====== ELEMENTOS DOM ======
-    const form = document.getElementById("formPedido");
-    const listaEl = document.getElementById("lista");
-    const contador = document.getElementById("contador");
-    const btnReset = document.getElementById("btnReset");
-    const pageLoadTime = Date.now();
-
-    // ====== SOM DE NOTIFICAÇÃO ======
-    function playDeepBeep() {
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const now = ctx.currentTime;
-        for (let i = 0; i < 3; i++) {
-          const o = ctx.createOscillator();
-          const g = ctx.createGain();
-          o.type = "square";
-          o.frequency.value = 160;
-          g.gain.setValueAtTime(0.0001, now + i * 0.7);
-          g.gain.exponentialRampToValueAtTime(1.0, now + i * 0.7 + 0.05);
-          g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.7 + 0.6);
-          o.connect(g); g.connect(ctx.destination);
-          o.start(now + i * 0.7); o.stop(now + i * 0.7 + 0.6);
-        }
-      } catch (e) { console.warn("Erro ao tocar som:", e); }
+      pedidos.forEach(id => {
+        document.getElementById('pedido'+id).innerText = `Enviado em: ${dataHoraFormatada}`;
+      });
     }
 
-    // ====== CRIAÇÃO DE ITENS ======
-    function renderItem(key, data) {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.id = "i-" + key;
-      div.innerHTML = `
-        <div style="min-width:0">
-          <div style="font-weight:700">${data.peca}</div>
-          <div class="meta">👩‍🏭 ${data.encarregada} • ${new Date(data.createdAt).toLocaleString()}</div>
-          <div class="meta">📌 Ref: ${data.referencia}</div>
-          ${data.observacao ? `<div class="meta">📝 ${data.observacao}</div>` : ""}
-        </div>`;
-      return div;
-    }
-
-    // ====== ATUALIZA CONTADOR ======
-    function updateCounter() {
-      contador.textContent = listaEl.children.length + " pedidos";
-    }
-
-    // ====== ENVIO DO FORMULÁRIO ======
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const encarregada = document.getElementById("encarregada").value.trim();
-      const peca = document.getElementById("peca").value.trim();
-      const referencia = document.getElementById("referencia").value.trim();
-      const observacao = document.getElementById("observacao").value.trim();
-
-      if (!encarregada || !peca || !referencia) return alert("⚠️ Preencha todos os campos obrigatórios.");
-
-      const novo = {
-        encarregada,
-        peca,
-        referencia,
-        observacao,
-        createdAt: Date.now(),
-        enviado: false
-      };
-
-      try {
-        await push(pedidosRef, novo);
-        form.reset();
-        document.getElementById("encarregada").focus();
-      } catch (err) {
-        alert("Erro ao enviar pedido: " + err.message);
-      }
-    });
-
-    // ====== LIMPAR FORMULÁRIO ======
-    btnReset.addEventListener("click", () => {
-      form.reset();
-      document.getElementById("encarregada").focus();
-    });
-
-    // ====== SINCRONIZAÇÃO EM TEMPO REAL ======
-    onChildAdded(pedidosRef, (snap) => {
-      const key = snap.key;
-      const val = snap.val();
-      if (document.getElementById("i-" + key)) return;
-      listaEl.insertBefore(renderItem(key, val), listaEl.firstChild);
-      updateCounter();
-      if (val.createdAt && val.createdAt > pageLoadTime) playDeepBeep();
-    });
-
-    onChildRemoved(pedidosRef, (snap) => {
-      const el = document.getElementById("i-" + snap.key);
-      if (el) el.remove();
-      updateCounter();
-    });
-
-    document.getElementById("encarregada").focus();
+    // Atualiza a cada segundo
+    setInterval(atualizarDataHoraPedidos, 1000);
+    atualizarDataHoraPedidos(); // Executa imediatamente
   </script>
+
 </body>
 </html>
