@@ -1,207 +1,246 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🧰 Produção - Sistema de Pedidos</title>
-  <style>
-    :root {
-      --bg: #f3f6fa;
-      --card: #fff;
-      --accent: #0b63d6;
-      --muted: #556;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧩 Produção - Sistema de Pedidos</title>
+<style>
+:root {
+  --bg: #f3f6fa;
+  --card: #fff;
+  --accent: #0b63d6;
+  --muted: #556;
+}
 
-    body {
-      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      margin: 0;
-      padding: 18px;
-      color: #062436;
-    }
+body {
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  margin: 0;
+  padding: 18px;
+  color: #062436;
+}
 
-    .container {
-      max-width: 950px;
-      margin: 0 auto;
-    }
+.container {
+  max-width: 950px;
+  margin: 0 auto;
+}
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 14px;
-      text-align: center;
-      color: var(--accent);
-    }
+h1 {
+  font-size: 22px;
+  margin-bottom: 14px;
+  text-align: center;
+  color: var(--accent);
+}
 
-    form .row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+h2 {
+  margin-top: 20px;
+  color: var(--accent);
+}
 
-    input, textarea {
-      padding: 10px;
-      border: 1px solid #d6dde6;
-      border-radius: 8px;
-      font-size: 15px;
-      width: 100%;
-      box-sizing: border-box;
-    }
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--card);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
 
-    textarea { resize: vertical; }
+input, textarea {
+  padding: 10px;
+  border: 1px solid #d1d9e6;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
 
-    button {
-      padding: 10px 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-    }
+textarea {
+  resize: vertical;
+}
 
-    .btn-enviar { background: var(--accent); color: #fff; }
-    .btn-limpar { background: #e6ebf0; color: #062436; }
-    .btn-enviar:hover, .btn-limpar:hover { opacity: 0.9; }
+.botoes {
+  display: flex;
+  gap: 10px;
+}
 
-    .list { margin-top: 12px; }
+button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-    .item {
-      border: 1px solid #eef4fb;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 10px;
-      background: var(--card);
-    }
+.btn-enviar {
+  background: var(--accent);
+  color: #fff;
+}
 
-    .meta {
-      font-size: 13px;
-      color: var(--muted);
-    }
+.btn-limpar {
+  background: #e6ebf0;
+  color: #062436;
+}
 
-    .enviado {
-      color: green;
-      font-weight: bold;
-    }
+button:hover { opacity: 0.9; }
 
-    footer {
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--muted);
-      text-align: center;
-    }
-  </style>
+.list {
+  margin-top: 12px;
+}
+
+.item {
+  border: 1px solid #eef4fb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--card);
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.enviado {
+  color: green;
+  font-weight: bold;
+}
+
+footer {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>🧰 Produção - Sistema de Pedidos</h1>
+<div class="container">
+  <h1>🧩 Produção - Sistema de Pedidos</h1>
 
-    <!-- Formulário -->
-    <form id="formPedido">
-      <div class="row">
-        <input id="encarregada" placeholder="👩‍🏭 Nome da encarregada (obrigatório)" required />
-        <input id="peca" placeholder="🧩 Nome da peça (obrigatório)" required />
-      </div>
-      <div class="row">
-        <input id="referencia" placeholder="📌 Referência (obrigatório)" required />
-      </div>
-      <div class="row">
-        <textarea id="observacao" placeholder="📝 Observação (opcional)" rows="2"></textarea>
-      </div>
-      <div class="row">
-        <button class="btn-enviar" type="submit">📨 Enviar pedido</button>
-        <button class="btn-limpar" type="button" id="btnLimpar">🧼 Limpar</button>
-      </div>
-    </form>
+  <!-- Formulário -->
+  <form id="formPedido">
+    <input id="encarregada" type="text" placeholder="👩‍🏭 Encarregada" required>
+    <input id="peca" type="text" placeholder="🧩 Peça" required>
+    <input id="referencia" type="text" placeholder="📌 Referência" required>
+    <textarea id="observacao" rows="2" placeholder="📝 Observação (opcional)"></textarea>
 
-    <!-- Lista de pedidos -->
-    <section class="list" id="listaPedidos"></section>
+    <div class="botoes">
+      <button class="btn-enviar" type="submit">📨 Enviar Pedido</button>
+      <button class="btn-limpar" type="button" id="btnLimpar">🧼 Limpar</button>
+    </div>
+  </form>
 
-    <footer>
-      Sistema integrado com Firebase Realtime Database.
-    </footer>
-  </div>
+  <!-- Pedidos Pendentes -->
+  <h2>⏳ Pedidos Pendentes</h2>
+  <div id="listaPendentes" class="list"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, onChildChanged } 
-      from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  <!-- Pedidos Enviados -->
+  <h2>✅ Pedidos Enviados</h2>
+  <div id="listaEnviados" class="list"></div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
-      authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
-      databaseURL: "https://sistema-de-pedidos-208dd-default-rtdb.firebaseio.com",
-      projectId: "sistema-de-pedidos-208dd",
-      storageBucket: "sistema-de-pedidos-208dd.firebasestorage.app",
-      messagingSenderId: "728239911093",
-      appId: "1:728239911093:web:fdb33f1ea4a4d314738efc"
-    };
+  <footer>
+    Sistema integrado com Firebase Realtime Database.
+  </footer>
+</div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const pedidosRef = ref(db, "pedidos");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved } 
+from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    const form = document.getElementById("formPedido");
-    const lista = document.getElementById("listaPedidos");
-    const btnLimpar = document.getElementById("btnLimpar");
+const firebaseConfig = {
+  apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
+  authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
+  databaseURL: "https://sistema-de-pedidos-208dd-default-rtdb.firebaseio.com",
+  projectId: "sistema-de-pedidos-208dd",
+  storageBucket: "sistema-de-pedidos-208dd.firebasestorage.app",
+  messagingSenderId: "728239911093",
+  appId: "1:728239911093:web:fdb33f1ea4a4d314738efc"
+};
 
-    function renderPedido(id, pedido) {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.id = "i-" + id;
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const pedidosRef = ref(db, "pedidos");
 
-      let html = `<div>
-        <div style="font-weight:700">${pedido.peca}</div>
-        <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
-        <div class="meta">📌 Ref: ${pedido.referencia}</div>
-        <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
-        ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
-        ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}
-      </div>`;
+const listaPendentes = document.getElementById("listaPendentes");
+const listaEnviados = document.getElementById("listaEnviados");
+const form = document.getElementById("formPedido");
+const btnLimpar = document.getElementById("btnLimpar");
 
-      div.innerHTML = html;
-      return div;
-    }
+function renderPedido(id, pedido) {
+  const div = document.createElement("div");
+  div.className = "item";
+  div.id = "p-" + id;
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const encarregada = document.getElementById("encarregada").value.trim();
-      const peca = document.getElementById("peca").value.trim();
-      const referencia = document.getElementById("referencia").value.trim();
-      const observacao = document.getElementById("observacao").value.trim();
+  let html = `<div style="font-weight:700">${pedido.peca}</div>
+    <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
+    <div class="meta">📌 Ref: ${pedido.referencia}</div>
+    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
+    ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
+    ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}`;
 
-      if (!encarregada || !peca || !referencia) {
-        alert("⚠️ Preencha todos os campos obrigatórios.");
-        return;
-      }
+  div.innerHTML = html;
 
-      await push(pedidosRef, {
-        encarregada,
-        peca,
-        referencia,
-        observacao,
-        createdAt: Date.now(),
-        enviado: false
-      });
+  if (pedido.enviado) {
+    listaEnviados.prepend(div);
+  } else {
+    listaPendentes.prepend(div);
+  }
+}
 
-      form.reset();
-      document.getElementById("encarregada").focus();
-    });
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const encarregada = document.getElementById("encarregada").value.trim();
+  const peca = document.getElementById("peca").value.trim();
+  const referencia = document.getElementById("referencia").value.trim();
+  const observacao = document.getElementById("observacao").value.trim();
 
-    btnLimpar.addEventListener("click", () => {
-      form.reset();
-      document.getElementById("encarregada").focus();
-    });
+  if (!encarregada || !peca || !referencia) {
+    alert("⚠️ Preencha todos os campos obrigatórios.");
+    return;
+  }
 
-    onChildAdded(pedidosRef, (snap) => {
-      const pedido = snap.val();
-      const id = snap.key;
-      if (!document.getElementById("i-" + id)) lista.prepend(renderPedido(id, pedido));
-    });
+  const novoPedido = {
+    encarregada,
+    peca,
+    referencia,
+    observacao,
+    createdAt: Date.now(),
+    enviado: false
+  };
 
-    onChildChanged(pedidosRef, (snap) => {
-      const pedido = snap.val();
-      const id = snap.key;
-      const el = document.getElementById("i-" + id);
-      if (el) el.replaceWith(renderPedido(id, pedido));
-    });
-  </script>
+  await push(pedidosRef, novoPedido);
+  form.reset();
+  document.getElementById("encarregada").focus();
+});
+
+btnLimpar.addEventListener("click", () => {
+  form.reset();
+  document.getElementById("encarregada").focus();
+});
+
+onChildAdded(pedidosRef, (snap) => {
+  const pedido = snap.val();
+  const id = snap.key;
+  if (!document.getElementById("p-" + id)) renderPedido(id, pedido);
+});
+
+onChildChanged(pedidosRef, (snap) => {
+  const pedido = snap.val();
+  const id = snap.key;
+  const el = document.getElementById("p-" + id);
+  if (el) el.remove();
+  renderPedido(id, pedido);
+});
+
+onChildRemoved(pedidosRef, (snap) => {
+  const el = document.getElementById("p-" + snap.key);
+  if (el) el.remove();
+});
+</script>
 </body>
 </html>
+
+
