@@ -89,9 +89,26 @@ footer {
   color: var(--muted);
   text-align: center;
 }
+
+#contadorPedidos {
+  position: fixed;
+  top: 10px;
+  right: 15px;
+  background-color: #0b63d6;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  font-family: Arial, sans-serif;
+}
 </style>
 </head>
 <body>
+
+<div id="contadorPedidos">Pedidos: 0</div>
+
 <div class="container">
   <h1>📦 Estoque - Sistema de Pedidos</h1>
 
@@ -110,7 +127,7 @@ footer {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update, remove } 
+import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove, onValue } 
 from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -129,6 +146,13 @@ const pedidosRef = ref(db, "pedidos");
 
 const listaPendentes = document.getElementById("listaPendentes");
 const listaEnviados = document.getElementById("listaEnviados");
+const contador = document.getElementById("contadorPedidos");
+
+// ====== SOM DE ALERTA ======
+const somNotificacao = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+somNotificacao.volume = 1.0;
+
+const pedidosExistentes = new Set();
 
 function renderPedido(id, pedido) {
   const div = document.createElement("div");
@@ -146,7 +170,6 @@ function renderPedido(id, pedido) {
 
   div.innerHTML = html;
 
-  // Botões apenas para pedidos pendentes
   if (!pedido.enviado) {
     const btnEnviar = document.createElement("button");
     btnEnviar.className = "btn-enviar";
@@ -162,7 +185,7 @@ function renderPedido(id, pedido) {
 
   const btnApagar = document.createElement("button");
   btnApagar.className = "btn-secondary";
-  btnApagar.textContent = "🗑 Apagar";
+  btnApagar.textContent = "🧽 Apagar";
   btnApagar.addEventListener("click", () => {
     if (confirm("Tem certeza que deseja apagar este pedido?")) {
       remove(ref(db, "pedidos/" + id));
@@ -173,10 +196,19 @@ function renderPedido(id, pedido) {
   return div;
 }
 
+// ====== MONITORAR NOVOS PEDIDOS ======
 onChildAdded(pedidosRef, (snap) => {
   const pedido = snap.val();
   const id = snap.key;
+
   if (!document.getElementById("i-" + id)) renderPedido(id, pedido);
+
+  if (!pedidosExistentes.has(id)) {
+    pedidosExistentes.add(id);
+    setTimeout(() => {
+      somNotificacao.play().catch(() => console.log("🔇 Som bloqueado até interação do usuário."));
+    }, 500);
+  }
 });
 
 onChildChanged(pedidosRef, (snap) => {
@@ -191,6 +223,13 @@ onChildRemoved(pedidosRef, (snap) => {
   const el = document.getElementById("i-" + snap.key);
   if (el) el.remove();
 });
+
+// ====== CONTADOR DE PEDIDOS ======
+onValue(pedidosRef, (snapshot) => {
+  const total = snapshot.size || snapshot.numChildren();
+  contador.textContent = `Pedidos: ${total}`;
+});
 </script>
+
 </body>
 </html>
