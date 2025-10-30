@@ -3,129 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧩 Produção - Sistema de Pedidos</title>
+<title>🏭 Produção - Sistema de Pedidos</title>
 <style>
-:root {
-  --bg: #f3f6fa;
-  --card: #fff;
-  --accent: #0b63d6;
-  --muted: #556;
-}
-
 body {
-  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg);
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f5f7fb;
+  color: #1b1b1b;
   margin: 0;
-  padding: 18px;
-  color: #062436;
+  padding: 20px;
 }
 
-.container {
-  max-width: 950px;
-  margin: 0 auto;
-}
+h1 { text-align: center; color: #0b63d6; margin-bottom: 25px; }
 
-h1 {
-  font-size: 22px;
-  margin-bottom: 14px;
-  text-align: center;
-  color: var(--accent);
-}
+.container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 25px; }
 
-h2 {
-  margin-top: 20px;
-  color: var(--accent);
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--card);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-input, textarea {
-  padding: 10px;
-  border: 1px solid #d1d9e6;
-  border-radius: 6px;
-  font-size: 14px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.botoes {
-  display: flex;
-  gap: 10px;
-}
-
-button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.btn-enviar {
-  background: var(--accent);
-  color: #fff;
-}
-
-.btn-limpar {
-  background: #e6ebf0;
-  color: #062436;
-}
-
+form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; }
+textarea { resize: vertical; }
+.botoes { display: flex; gap: 10px; }
+button { padding: 10px 18px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; }
+.btn-enviar { background-color: #0b63d6; color: #fff; }
+.btn-limpar { background-color: #e1e5ea; color: #333; }
 button:hover { opacity: 0.9; }
 
-.list {
-  margin-top: 12px;
-}
+.pedido { border: 1px solid #e0e4e9; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #fafcff; }
+.pedido strong { color: #0b63d6; }
+.meta { font-size: 14px; color: #555; margin-top: 4px; }
+.enviado-destaque { color: green; font-weight: bold; font-size: 15px; margin-top: 5px; }
 
-.item {
-  border: 1px solid #eef4fb;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-  background: var(--card);
-}
-
-.meta {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.enviado {
-  color: green;
+#contadorPedidos {
+  position: fixed;
+  top: 10px;
+  right: 15px;
+  background-color: #0b63d6;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
   font-weight: bold;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 
-footer {
-  margin-top: 16px;
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-}
+footer { text-align: center; font-size: 13px; color: #777; margin-top: 25px; }
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>🧩 Produção - Sistema de Pedidos</h1>
 
-  <!-- Formulário -->
+<div id="contadorPedidos">Pedidos: 0</div>
+
+<h1>🏭 Produção - Sistema de Pedidos</h1>
+
+<div class="container">
+
+  <!-- FORMULÁRIO -->
   <form id="formPedido">
     <input id="encarregada" type="text" placeholder="👩‍🏭 Encarregada" required>
     <input id="peca" type="text" placeholder="🧩 Peça" required>
     <input id="referencia" type="text" placeholder="📌 Referência" required>
     <textarea id="observacao" rows="2" placeholder="📝 Observação (opcional)"></textarea>
-
     <div class="botoes">
       <button class="btn-enviar" type="submit">📨 Enviar Pedido</button>
       <button class="btn-limpar" type="button" id="btnLimpar">🧼 Limpar</button>
@@ -133,22 +68,19 @@ footer {
   </form>
 
   <!-- Pedidos Pendentes -->
-  <h2>⏳ Pedidos Pendentes</h2>
-  <div id="listaPendentes" class="list"></div>
+  <h3>⏳ Pedidos Pendentes</h3>
+  <div id="pendentes"></div>
 
   <!-- Pedidos Enviados -->
-  <h2>✅ Pedidos Enviados</h2>
-  <div id="listaEnviados" class="list"></div>
+  <h3>✅ Pedidos Enviados</h3>
+  <div id="enviados"></div>
 
-  <footer>
-    Sistema integrado com Firebase Realtime Database.
-  </footer>
+  <footer>Sistema integrado com Firebase Realtime Database.</footer>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved } 
-from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
@@ -164,32 +96,42 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const pedidosRef = ref(db, "pedidos");
 
-const listaPendentes = document.getElementById("listaPendentes");
-const listaEnviados = document.getElementById("listaEnviados");
+const pendentes = document.getElementById("pendentes");
+const enviados = document.getElementById("enviados");
 const form = document.getElementById("formPedido");
 const btnLimpar = document.getElementById("btnLimpar");
 
+// ===== Função para renderizar pedido =====
 function renderPedido(id, pedido) {
   const div = document.createElement("div");
-  div.className = "item";
-  div.id = "p-" + id;
+  div.className = "pedido";
+  div.id = "pedido-" + id;
 
-  let html = `<div style="font-weight:700">${pedido.peca}</div>
+  let html = `
+    <strong>${pedido.peca}</strong>
     <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
     <div class="meta">📌 Ref: ${pedido.referencia}</div>
-    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
     ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
-    ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}`;
+    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
+  `;
+
+  if (pedido.enviado && pedido.dataEnvio) {
+    const dataEnvio = new Date(pedido.dataEnvio).toLocaleString("pt-BR");
+    html += `<div class="enviado-destaque">✅ Enviado em: ${dataEnvio}</div>`;
+  }
 
   div.innerHTML = html;
 
   if (pedido.enviado) {
-    listaEnviados.prepend(div);
+    enviados.prepend(div);
   } else {
-    listaPendentes.prepend(div);
+    pendentes.prepend(div);
   }
+
+  return div;
 }
 
+// ===== Formulário =====
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   const encarregada = document.getElementById("encarregada").value.trim();
@@ -203,12 +145,8 @@ form.addEventListener("submit", async (e) => {
   }
 
   const novoPedido = {
-    encarregada,
-    peca,
-    referencia,
-    observacao,
-    createdAt: Date.now(),
-    enviado: false
+    encarregada, peca, referencia, observacao,
+    createdAt: Date.now(), enviado: false
   };
 
   await push(pedidosRef, novoPedido);
@@ -221,26 +159,43 @@ btnLimpar.addEventListener("click", () => {
   document.getElementById("encarregada").focus();
 });
 
+// ===== Real-time Updates =====
 onChildAdded(pedidosRef, (snap) => {
   const pedido = snap.val();
   const id = snap.key;
-  if (!document.getElementById("p-" + id)) renderPedido(id, pedido);
+  if (!document.getElementById("pedido-" + id)) renderPedido(id, pedido);
+  atualizarContador();
 });
 
 onChildChanged(pedidosRef, (snap) => {
   const pedido = snap.val();
   const id = snap.key;
-  const el = document.getElementById("p-" + id);
+  const el = document.getElementById("pedido-" + id);
   if (el) el.remove();
   renderPedido(id, pedido);
+  atualizarContador();
 });
 
 onChildRemoved(pedidosRef, (snap) => {
-  const el = document.getElementById("p-" + snap.key);
+  const el = document.getElementById("pedido-" + snap.key);
   if (el) el.remove();
+  atualizarContador();
 });
+
+// ===== Contador de Pedidos =====
+function atualizarContador() {
+  import("https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js").then(({ getDatabase, ref, onValue }) => {
+    const dbRef = ref(db, "pedidos");
+    onValue(dbRef, (snapshot) => {
+      const total = snapshot.size || snapshot.numChildren();
+      document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
+    });
+  });
+}
+
+// Chama uma vez no load
+atualizarContador();
 </script>
+
 </body>
 </html>
-
-
