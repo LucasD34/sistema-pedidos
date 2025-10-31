@@ -15,21 +15,42 @@ body {
 
 h1 { text-align: center; color: #0b63d6; margin-bottom: 25px; }
 
-.container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 25px; }
-
-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
-input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; }
-textarea { resize: vertical; }
-.botoes { display: flex; gap: 10px; }
+.container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 25px; }form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; transition: border-color 0.3s; }
+input:focus, textarea:focus { border-color: #0b63d6; outline: none; }
+.invalid { border-color: #e74c3c !important; }
+textarea { resize: vertical; }.botoes { display: flex; gap: 10px; }
 button { padding: 10px 18px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; }
 .btn-enviar { background-color: #0b63d6; color: #fff; }
 .btn-limpar { background-color: #e1e5ea; color: #333; }
 button:hover { opacity: 0.9; }
 
-.pedido { border: 1px solid #e0e4e9; border-radius: 10px; padding: 15px; margin-bottom: 12px; background: #fafcff; }
+.pedido { 
+  border: 1px solid #e0e4e9; 
+  border-radius: 10px; 
+  padding: 18px; /* Aumentando o padding */
+  margin-bottom: 15px; /* Aumentando a margem */
+  background: #fafcff; 
+  font-size: 1.1em; /* Aumentando a fonte base */
+  font-weight: bold; /* Aplicando negrito */
+}
+
 .pedido strong { color: #0b63d6; }
-.meta { font-size: 14px; color: #555; margin-top: 4px; }
+.meta { font-size: 16px; color: #555; margin-top: 4px; }
 .enviado-destaque { color: green; font-weight: bold; font-size: 15px; margin-top: 5px; }
+.observacao-destaque { 
+  background-color: #fcebeb; /* Fundo vermelho muito claro */
+  color: #d90000; /* Texto vermelho puro e forte */
+  border: 1px solid #ff0000; /* Borda vermelha pura */
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.2em; /* Fonte ainda maior */
+  margin-top: 10px;
+  white-space: pre-wrap;
+  animation: pulse 1.5s infinite; /* Mantém o efeito de pulsação */
+}
+
 
 #contadorPedidos {
   position: fixed;
@@ -80,7 +101,7 @@ footer { text-align: center; font-size: 13px; color: #777; margin-top: 25px; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
@@ -111,7 +132,7 @@ function renderPedido(id, pedido) {
     <strong>${pedido.peca}</strong>
     <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
     <div class="meta">📌 Ref: ${pedido.referencia}</div>
-    ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
+    ${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}
     <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
   `;
 
@@ -134,28 +155,53 @@ function renderPedido(id, pedido) {
 // ===== Formulário =====
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+  
+  // 1. Coleta e validação dos campos
+  const campos = ["encarregada", "peca", "referencia"];
+  let formValido = true;
+  
+  campos.forEach(id => {
+    const input = document.getElementById(id);
+    if (input.value.trim() === "") {
+      input.classList.add("invalid");
+      formValido = false;
+    } else {
+      input.classList.remove("invalid");
+    }
+  });
+
+  if (!formValido) {
+    // Foca no primeiro campo inválido, se houver
+    const primeiroInvalido = document.querySelector(".invalid");
+    if (primeiroInvalido) primeiroInvalido.focus();
+    return;
+  }
+  
+  // 2. Coleta dos dados (agora com certeza de que estão preenchidos)
   const encarregada = document.getElementById("encarregada").value.trim();
   const peca = document.getElementById("peca").value.trim();
   const referencia = document.getElementById("referencia").value.trim();
   const observacao = document.getElementById("observacao").value.trim();
-
-  if (!encarregada || !peca || !referencia) {
-    alert("⚠️ Preencha todos os campos obrigatórios.");
-    return;
-  }
 
   const novoPedido = {
     encarregada, peca, referencia, observacao,
     createdAt: Date.now(), enviado: false
   };
 
+  // 3. Envio para o Firebase
   await push(pedidosRef, novoPedido);
+  
+  // 4. Limpeza e foco
   form.reset();
   document.getElementById("encarregada").focus();
 });
 
 btnLimpar.addEventListener("click", () => {
   form.reset();
+  // Remove a classe 'invalid' ao limpar o formulário
+  document.querySelectorAll("#formPedido input").forEach(input => {
+    input.classList.remove("invalid");
+  });
   document.getElementById("encarregada").focus();
 });
 
@@ -164,7 +210,7 @@ onChildAdded(pedidosRef, (snap) => {
   const pedido = snap.val();
   const id = snap.key;
   if (!document.getElementById("pedido-" + id)) renderPedido(id, pedido);
-  atualizarContador();
+
 });
 
 onChildChanged(pedidosRef, (snap) => {
@@ -173,28 +219,21 @@ onChildChanged(pedidosRef, (snap) => {
   const el = document.getElementById("pedido-" + id);
   if (el) el.remove();
   renderPedido(id, pedido);
-  atualizarContador();
+
 });
 
 onChildRemoved(pedidosRef, (snap) => {
   const el = document.getElementById("pedido-" + snap.key);
   if (el) el.remove();
-  atualizarContador();
+
 });
 
 // ===== Contador de Pedidos =====
-function atualizarContador() {
-  import("https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js").then(({ getDatabase, ref, onValue }) => {
-    const dbRef = ref(db, "pedidos");
-    onValue(dbRef, (snapshot) => {
-      const total = snapshot.size || snapshot.numChildren();
-      document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
-    });
-  });
-}
-
-// Chama uma vez no load
-atualizarContador();
+// Monitora e atualiza o contador de pedidos em tempo real usando onValue
+onValue(pedidosRef, (snapshot) => {
+  const total = snapshot.size || snapshot.numChildren();
+  document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
+});
 </script>
 
 </body>

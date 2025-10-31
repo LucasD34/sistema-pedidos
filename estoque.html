@@ -44,17 +44,20 @@ h2 {
 .item {
   border: 1px solid #eef4fb;
   border-radius: 8px;
-  padding: 12px;
+  padding: 16px;
   margin-bottom: 10px;
   background: var(--card);
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
+  font-size: 1.1em;
+  font-weight: bold; /* NOVO: Deixa o texto do item em negrito */
 }
 
 .meta {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--muted);
+ 
 }
 
 .enviado {
@@ -125,7 +128,7 @@ footer {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, onChildAdded, onChildChanged, onChildRemoved, update, remove } 
+import { getDatabase, ref, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove } 
 from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -170,12 +173,13 @@ function renderPedido(id, pedido) {
 
   if (!pedido.enviado) {
     // Campo de observação opcional
-    const inputObs = document.createElement("input");
-    inputObs.type = "text";
-    inputObs.placeholder = "📝 Observação (opcional)";
+    const inputObs = document.createElement("textarea"); // Alterado para textarea para melhor visualização e entrada de texto
+    inputObs.rows = "2";
+    inputObs.placeholder = "📝 Observação (opcional) - Será enviada para a Produção";
     inputObs.value = pedido.observacao || "";
     inputObs.style.marginTop = "5px";
     inputObs.style.width = "100%";
+    inputObs.style.resize = "vertical";
     div.appendChild(inputObs);
 
     const btnEnviar = document.createElement("button");
@@ -186,7 +190,7 @@ function renderPedido(id, pedido) {
       update(ref(db, "pedidos/" + id), { 
         enviado: true, 
         dataEnvio: Date.now(),
-        observacao: novaObs
+        observacao: novaObs // Garante que a observação seja salva no Firebase
       });
     });
 
@@ -224,8 +228,6 @@ onChildAdded(pedidosRef, (snap) => {
       });
     }, 500);
   }
-
-  atualizarContador();
 });
 
 onChildChanged(pedidosRef, (snap) => {
@@ -234,23 +236,18 @@ onChildChanged(pedidosRef, (snap) => {
   const el = document.getElementById("i-" + id);
   if (el) el.remove();
   renderPedido(id, pedido);
-  atualizarContador();
 });
 
 onChildRemoved(pedidosRef, (snap) => {
   const el = document.getElementById("i-" + snap.key);
   if (el) el.remove();
-  atualizarContador();
 });
 
-// ====== Contador de pedidos ======
-function atualizarContador() {
-  let total = 0;
-  pedidosRef.get().then((snapshot) => {
-    total = snapshot.size || snapshot.numChildren();
-    document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
-  });
-}
+// ====== Monitorar e atualizar contador de pedidos em tempo real ======
+onValue(pedidosRef, (snapshot) => {
+  const total = snapshot.size || snapshot.numChildren();
+  document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
+});
 </script>
 
 </body>
