@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📦 Estoque - Sistema de Pedidos</title>
 <style>
+ /* ====== LOGO ====== */
+  .logo-container {
+  width: 100%
+  justify-content: flex-start;/* ou center se quiser centralizar tudo*/
+  display: flex;
+  align-items: center;
+  gap: 50px; /* espaço entre as imagens */
+  margin: 10px 15px;
+  background-color: #ffffff /*fundo branco puro*/
+  margin: 10px;
+}
+
+.logo-container img {
+  height: 100px; /* ajusta o tamanho igual pra todas */
+  width: auto;
+  border-radius: 8px; /* opcional: cantos levemente arredondados */
+}
 :root {
   --bg: #f3f6fa;
   --card: #fff;
@@ -14,7 +31,7 @@
 
 body {
   font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg);
+  background: ffffff;
   margin: 0;
   padding: 18px;
   color: #062436;
@@ -87,13 +104,13 @@ button {
 button:hover { opacity: 0.9; }
 
 #contadorPedidos {
-  position: fixed;
+  position: relative;
   top: 10px;
-  right: 15px;
+  right: 0px;
   background-color: #0b63d6;
   color: #fff;
   padding: 10px 20px;
-  border-radius: 25px;
+  border-radius: 100px;
   font-weight: bold;
   box-shadow: 0 0 10px rgba(0,0,0,0.2);
   z-index: 1000;
@@ -109,10 +126,20 @@ footer {
 </style>
 </head>
 <body>
-<!-- Logo Elka no canto esquerdo -->
-  <img src="logo-elka.png" alt="Logo Elka" 
-       style="position: relative; top: 10px; left: 10px; width: 150px; height: auto; z-index: 1000;">
-
+ <!-- Logo Elka -->
+ <div class="logo-container">
+  <img src="logo-elka.png" alt="Logo Elka" class="logo-elka">
+  <img src="caca.png" alt="Brinquedo Cacá" class="logo-extra">
+  <img src="dino.png" alt="Brinquedo Dino" class="logo-extra">
+  <img src="bibi.png" alt="brinquedo bibi" class="logo-extra">
+  <img src="pinos.png" alt="brinquedo pinos" class="logo-extra">
+  <img src="stitch.png" alt="brinquedo stitch" class="logo-extra">
+  <img src="angel.png" alt="brinquedo angel" class="logo-extra">
+  <img src="roby.png" alt="brinquedo roby" class="logo-extra"> 
+  <img src="zoom.png" alt="brinquedo zoom" class="logo-extra">  
+<!-- pode adicionar mais imagens abaixo -->
+  <!-- <img src="outra.png" alt="Outro brinquedo" class="logo-extra"> -->
+</div>
 
 <div id="contadorPedidos">Pedidos: 0</div>
 
