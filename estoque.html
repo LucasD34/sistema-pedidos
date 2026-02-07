@@ -6,6 +6,16 @@
 <title>📦 Estoque - Sistema de Pedidos</title>
 <style>
  /* ====== LOGO ====== */
+
+  .logo-container img {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.logo-container img:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
   .logo-container {
   width: 100%
   justify-content: flex-start;/* ou center se quiser centralizar tudo*/
@@ -18,7 +28,7 @@
 }
 
 .logo-container img {
-  height: 100px; /* ajusta o tamanho igual pra todas */
+  height: 110px; /* ajusta o tamanho igual pra todas */
   width: auto;
   border-radius: 8px; /* opcional: cantos levemente arredondados */
 }
