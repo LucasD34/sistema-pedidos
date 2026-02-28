@@ -28,8 +28,15 @@ O diferencial técnico é a atualização **bi-direcional em tempo real**: quand
 * **Banco de Dados:** [Firebase Realtime Database](https://firebase.google.com/)
 * **Notificações:** Web Audio API
 
+## 📈 Impacto do Projeto
+Este sistema foi criado por iniciativa própria para otimizar o fluxo de comunicação no meu setor na Elka.
+* **Redução de erros:** Eliminação de pedidos perdidos em papéis.
+* **Agilidade:** Notificações instantâneas que reduziram o tempo de espera em X%.
+* **Autonomia:** Ferramenta desenvolvida para suprir uma necessidade real do chão de fábrica.
+
 ## ⚙️ Como Instalar e Usar
 
 1. **Clonagem do Repositório:**
    ```bash
    git clone [https://github.com/seu-usuario/nome-do-repositorio.git](https://github.com/seu-usuario/nome-do-repositorio.git)
+
