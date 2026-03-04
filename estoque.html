@@ -156,6 +156,13 @@ footer {
 <div class="container">
   <h1>📦 Estoque - Sistema de Pedidos</h1>
 
+ <div style="margin: 20px 0; display: flex; gap: 10px; align-items: center;">
+  <button id="btnSelecionarTodos" class="btn-secondary">Check / Uncheck Todos</button>
+  <button id="btnApagarVarios" style="background-color: #ff4d4d; color: white; display: none;">🗑 Apagar Selecionados</button>
+</div>
+
+<h2>⏳ Pedidos Pendentes</h2>
+ 
   <h2>⏳ Pedidos Pendentes</h2>
   <div id="listaPendentes" class="list"></div>
 
@@ -201,15 +208,20 @@ function renderPedido(id, pedido) {
   div.className = "item";
   div.id = "i-" + id;
 
-  let html = `<div>
-    <div style="font-weight:700">${pedido.peca}</div>
-    <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
-    <div class="meta">📌 Ref: ${pedido.referencia}</div>
-    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
-    ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
-    ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}
-  </div>`;
-
+  // Adicionamos um checkbox lateral com o ID do Firebase no "value"
+  let html = `
+  <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+    <input type="checkbox" class="pedido-checkbox" value="${id}" style="transform: scale(1.5); margin-top: 5px;">
+    <div style="flex-grow: 1;">
+      <div style="font-weight:700">${pedido.peca}</div>
+      <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
+      <div class="meta">📌 Ref: ${pedido.referencia}</div>
+      <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
+      ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
+      ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}
+    </div>
+  </div>`
+ 
   div.innerHTML = html;
 
   if (!pedido.enviado) {
@@ -289,6 +301,48 @@ onValue(pedidosRef, (snapshot) => {
   const total = snapshot.size || snapshot.numChildren();
   document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
 });
+
+ // ====== Lógica de Seleção em Massa ======
+
+const btnSelecionarTodos = document.getElementById("btnSelecionarTodos");
+const btnApagarVarios = document.getElementById("btnApagarVarios");
+
+// Alternar entre selecionar todos e desmarcar todos
+btnSelecionarTodos.addEventListener("click", () => {
+  const checkboxes = document.querySelectorAll(".pedido-checkbox");
+  const todosMarcados = Array.from(checkboxes).every(cb => cb.checked);
+  
+  checkboxes.forEach(cb => cb.checked = !todosMarcados);
+  atualizarVisibilidadeBotaoApagar();
+});
+
+// Mostrar ou esconder o botão de apagar baseado na seleção
+document.addEventListener("change", (e) => {
+  if (e.target.classList.contains("pedido-checkbox")) {
+    atualizarVisibilidadeBotaoApagar();
+  }
+});
+
+function atualizarVisibilidadeBotaoApagar() {
+  const selecionados = document.querySelectorAll(".pedido-checkbox:checked").length;
+  btnApagarVarios.style.display = selecionados > 0 ? "block" : "none";
+  btnApagarVarios.textContent = `🗑 Apagar Selecionados (${selecionados})`;
+}
+
+// Função para apagar todos os selecionados no Firebase
+btnApagarVarios.addEventListener("click", async () => {
+  const selecionados = document.querySelectorAll(".pedido-checkbox:checked");
+  
+  if (confirm(`Tem certeza que deseja apagar ${selecionados.length} pedidos permanentemente?`)) {
+    for (let cb of selecionados) {
+      const idParaApagar = cb.value;
+      await remove(ref(db, "pedidos/" + idParaApagar));
+    }
+    alert("Pedidos apagados com sucesso!");
+    btnApagarVarios.style.display = "none";
+  }
+});
+ 
 </script>
 
 </body>
