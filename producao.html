@@ -88,7 +88,7 @@ left: 10px;
   <form id="formPedido">
     <input id="encarregada" type="text" placeholder="👩‍🏭 Encarregada" required>
     <input id="peca" type="text" placeholder="🧩 Peça" required>
-    <input id="referencia" type="text" placeholder="📌 Referência" required>
+    <input id="referencia" type="tel" placeholder="📌 Referência(APENAS NÚMEROS)" required>
     <textarea id="observacao" rows="2" placeholder="📝 Observação (opcional)"></textarea>
     <div class="botoes">
       <button class="btn-enviar" type="submit">📨 Enviar Pedido</button>
@@ -179,16 +179,30 @@ form.addEventListener("submit", async (e) => {
   });
 
   if (!formValido) {
-    // Foca no primeiro campo inválido, se houver
     const primeiroInvalido = document.querySelector(".invalid");
     if (primeiroInvalido) primeiroInvalido.focus();
     return;
   }
+
+  // --- NOVA VALIDAÇÃO DE NÚMEROS NA REF ---
+  const inputRef = document.getElementById("referencia");
+  const valorRef = inputRef.value.trim();
   
-  // 2. Coleta dos dados (agora com certeza de que estão preenchidos)
+  // O teste /^\d+$/ verifica se o texto contém APENAS dígitos de 0 a 9
+  const apenasNumeros = /^\d+$/.test(valorRef);
+
+  if (!apenasNumeros) {
+    alert("⚠️ Atenção: No campo Referência, digite apenas números!");
+    inputRef.classList.add("invalid");
+    inputRef.focus();
+    return; // Interrompe o envio se não for número
+  }
+  // ----------------------------------------
+  
+  // 2. Coleta dos dados (agora com certeza de que estão preenchidos e válidos)
   const encarregada = document.getElementById("encarregada").value.trim();
   const peca = document.getElementById("peca").value.trim();
-  const referencia = document.getElementById("referencia").value.trim();
+  const referencia = valorRef; // Usando o valor validado
   const observacao = document.getElementById("observacao").value.trim();
 
   const novoPedido = {
@@ -203,16 +217,7 @@ form.addEventListener("submit", async (e) => {
   form.reset();
   document.getElementById("encarregada").focus();
 });
-
-btnLimpar.addEventListener("click", () => {
-  form.reset();
-  // Remove a classe 'invalid' ao limpar o formulário
-  document.querySelectorAll("#formPedido input").forEach(input => {
-    input.classList.remove("invalid");
-  });
-  document.getElementById("encarregada").focus();
-});
-
+  
 // ===== Real-time Updates =====
 onChildAdded(pedidosRef, (snap) => {
   const pedido = snap.val();
