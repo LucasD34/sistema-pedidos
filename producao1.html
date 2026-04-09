@@ -1,0 +1,411 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏭 Produção - Sistema de Pedidos </title> 
+<style>
+body { 
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #f5f7fb;
+  color: #1b1b1b;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 { text-align: center; color: #0b63d6; margin-bottom: 25px; }
+
+.container { max-width: 900px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 25px; }form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px; }
+input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; box-sizing: border-box; transition: border-color 0.3s; }
+input:focus, textarea:focus { border-color: #0b63d6; outline: none; }
+.invalid { border-color: #e74c3c !important; }
+textarea { resize: vertical; }.botoes { display: flex; gap: 10px; }
+button { padding: 10px 18px; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; transition: 0.2s; }
+.btn-enviar { background-color: #0b63d6; color: #fff; }
+.btn-limpar { background-color: #e1e5ea; color: #333; }
+button:hover { opacity: 0.9; }
+
+.pedido { 
+  border: 1px solid #e0e4e9; 
+  border-radius: 10px; 
+  padding: 18px; /* Aumentando o padding */
+  margin-bottom: 15px; /* Aumentando a margem */
+  background: #fafcff; 
+  font-size: 1.1em; /* Aumentando a fonte base */
+  font-weight: bold; /* Aplicando negrito */
+}
+
+.pedido strong { color: #0b63d6; }
+.meta { font-size: 16px; color: #555; margin-top: 4px; }
+.enviado-destaque { color: green; font-weight: bold; font-size: 15px; margin-top: 5px; }
+.observacao-destaque { 
+  background-color: #fcebeb; /* Fundo vermelho muito claro */
+  color: #d90000; /* Texto vermelho puro e forte */
+  border: 1px solid #ff0000; /* Borda vermelha pura */
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1.2em; /* Fonte ainda maior */
+  margin-top: 10px;
+  white-space: pre-wrap;
+  animation: pulse 1.5s infinite; /* Mantém o efeito de pulsação */
+}
+
+
+#contadorPedidos {
+  position: fixed;
+  top: 10px;
+  right: 15px;
+  background-color: #0b63d6;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+footer { text-align: center; font-size: 13px; color: #777; margin-top: 25px; }
+
+.logo-elka { 
+width: 170px; 
+position: relative; /* rola junto com a página */ 
+top: 10px; 
+left: 10px;
+}
+
+/* Estilo base das abas */
+.tab-btn { 
+  padding: 10px 15px; 
+  border: none; 
+  cursor: pointer; 
+  font-weight: bold; 
+  color: #555; 
+  white-space: nowrap;
+  border-bottom: 3px solid transparent;
+  transition: 0.3s;
+}
+
+.tab-btn { padding: 10px 15px; border: none; cursor: pointer; background: none; font-weight: bold; color: #555; white-space: nowrap; }
+  .msg-estoque { background: #d1e7dd; padding: 5px 10px; border-radius: 8px; margin-bottom: 5px; text-align: right; margin-left: 20%; border: 1px solid #bcd0c7; }
+  .msg-producao { background: #e2e3e5; padding: 5px 10px; border-radius: 8px; margin-bottom: 5px; text-align: left; margin-right: 20%; border: 1px solid #d6d8db; }
+
+/* Cores específicas quando a aba está ativa - O !important é essencial aqui */
+.tab-sonia.active { color: #ff69b4 !important; border-bottom: 3px solid #ff69b4 !important; background: #fff0f5 !important; } /*Rosa*/
+.tab-dalva.active { color: #e74c3c !important; border-bottom: 3px solid #e74c3c !important; background: #fdf2f2 !important; } /*Vermelho*/
+.tab-josileide.active { color: #2ecc71 !important; border-bottom: 3px solid #2ecc71 !important; background: #f2fdf6 !important; } /*Verde*/
+.tab-creuza.active { color: #9b59b6 !important; border-bottom: 3px solid #9b59b6 !important; background: #f9f2fd !important; } /*Roxo*/
+.tab-elane.active { color: #e67e22 !important; border-bottom: 3px solid #e67e22 !important; background: #fdf7f2 !important; } /*Laranja*/
+
+/* Cores das bordas do container de chat */
+.border-sonia { border: 3px solid #ff69b4 !important; }
+.border-dalva { border: 3px solid #e74c3c !important; }
+.border-josileide { border: 3px solid #2ecc71 !important; }
+.border-creuza { border: 3px solid #9b59b6 !important; }
+.border-elane { border: 3px solid #e67e22 !important; }
+
+/* Cores para os balões de mensagem enviados pelo Estoque */
+.cor-balao-sonia { background-color: #fff0f5 !important; border: 1px solid #ff69b4 !important; } /* Rosa */
+.cor-balao-dalva { background-color: #fdf2f2 !important; border: 1px solid #e74c3c !important; } /* Vermelho */
+.cor-balao-josileide { background-color: #f2fdf6 !important; border: 1px solid #2ecc71 !important; } /* Verde */
+.cor-balao-creuza { background-color: #f9f2fd !important; border: 1px solid #9b59b6 !important; } /* Roxo */
+.cor-balao-elane { background-color: #fdf7f2 !important; border: 1px solid #e67e22 !important; } /* Laranja */
+
+/* Ajuste suave no fundo da caixa de mensagens para combinar */
+.bg-sonia { background-color: #fff0f5 !important; }
+.bg-dalva { background-color: #fdf2f2 !important; }
+.bg-josileide { background-color: #f2fdf6 !important; }
+.bg-creuza { background-color: #f9f2fd !important; }
+.bg-elane { background-color: #fdf7f2 !important; }
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+</style>
+</head>
+<body>
+<img src="logo-elka.png" alt="Logo Elka" class="logo-elka">
+
+<div id="container-chat" style="background: #fff; border: 2px solid #0b63d6; border-radius: 12px; margin-bottom: 20px; overflow: hidden;">
+  <div id="abas-chat" style="display: flex; background: #eef4fb; border-bottom: 1px solid #ccc; overflow-x: auto;">
+  <button class="tab-btn tab-sonia active" onclick="abrirChat('Sonia_Danielly')">Sonia/Danielly</button>
+  <button class="tab-btn tab-dalva" onclick="abrirChat('Dalva')">Dalva</button>
+  <button class="tab-btn tab-josileide" onclick="abrirChat('Josileide')">Josileide</button>
+  <button class="tab-btn tab-creuza" onclick="abrirChat('Creuza')">Creuza</button>
+  <button class="tab-btn tab-elane" onclick="abrirChat('Elane')">Elane</button>
+</div>
+
+  <div id="caixa-mensagens" style="height: 150px; overflow-y: auto; padding: 15px; background: #fdfdfd; font-size: 14px;">
+    <p style="color: #888;">Selecione uma encarregada para conversar...</p>
+  </div>
+
+  <div style="display: flex; padding: 10px; gap: 8px; background: #eee;">
+    <input type="text" id="inputMsg" placeholder="Digite um recado..." style="flex-grow: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+    <button id="btnEnviarMsg" style="background: #0b63d6; color: white; font-weight: bold;">Enviar</button>
+  </div>
+</div>
+
+<div id="contadorPedidos">Pedidos: 0</div>
+
+<h1>🏭 Produção - Sistema de Pedidos</h1>
+
+<div class="container">
+
+  <!-- FORMULÁRIO -->
+  <form id="formPedido">
+    <input id="encarregada" type="text" placeholder="👩‍🏭 Encarregada" required>
+    <input id="peca" type="text" placeholder="🧩 Peça" required>
+    <input id="referencia" type="tel" placeholder="📌 Referência(APENAS NÚMEROS)" required>
+    <textarea id="observacao" rows="2" placeholder="📝 Observação (opcional)"></textarea>
+    <div class="botoes">
+      <button class="btn-enviar" type="submit">📨 Enviar Pedido</button>
+      <button class="btn-limpar" type="button" id="btnLimpar">🧼 Limpar</button>
+    </div>
+  </form>
+
+  <!-- Pedidos Pendentes -->
+  <h3>⏳ Pedidos Pendentes</h3>
+  <div id="pendentes"></div>
+
+  <!-- Pedidos Enviados -->
+  <h3>✅ Pedidos Enviados</h3>
+  <div id="enviados"></div>
+
+  <footer>Sistema integrado com Firebase Realtime Database.</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+
+import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, limitToLast, query }
+
+from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
+  authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
+  databaseURL: "https://sistema-de-pedidos-208dd-default-rtdb.firebaseio.com",
+  projectId: "sistema-de-pedidos-208dd",
+  storageBucket: "sistema-de-pedidos-208dd.firebasestorage.app",
+  messagingSenderId: "728239911093",
+  appId: "1:728239911093:web:fdb33f1ea4a4d314738efc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const pedidosRef = ref(db, "pedidos");
+const pendentes = document.getElementById("pendentes");
+const enviados = document.getElementById("enviados");
+const form = document.getElementById("formPedido");
+const btnLimpar = document.getElementById("btnLimpar");
+// Novas variáveis para o Chat
+let chatAtual = "Sonia_Danielly";
+const inputMsg = document.getElementById("inputMsg");
+const btnEnviarMsg = document.getElementById("btnEnviarMsg");
+const caixaMensagens = document.getElementById("caixa-mensagens");
+
+
+// ===== Função para renderizar pedido =====
+function renderPedido(id, pedido) {
+  const div = document.createElement("div");
+  div.className = "pedido";
+  div.id = "pedido-" + id;
+
+  let html = `
+    <strong>${pedido.peca}</strong>
+    <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
+    <div class="meta">📌 Ref: ${pedido.referencia}</div>
+    ${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}
+    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
+  `;
+
+  if (pedido.enviado && pedido.dataEnvio) {
+    const dataEnvio = new Date(pedido.dataEnvio).toLocaleString("pt-BR");
+    html += `<div class="enviado-destaque">✅ Enviado em: ${dataEnvio}</div>`;
+  }
+
+  div.innerHTML = html;
+
+  if (pedido.enviado) {
+    enviados.prepend(div);
+  } else {
+    pendentes.prepend(div);
+  }
+
+  return div;
+}
+
+// ===== Formulário =====
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  
+  // 1. Coleta e validação dos campos
+  const campos = ["encarregada", "peca", "referencia"];
+  let formValido = true;
+  
+  campos.forEach(id => {
+    const input = document.getElementById(id);
+    if (input.value.trim() === "") {
+      input.classList.add("invalid");
+      formValido = false;
+    } else {
+      input.classList.remove("invalid");
+    }
+  });
+
+  if (!formValido) {
+    const primeiroInvalido = document.querySelector(".invalid");
+    if (primeiroInvalido) primeiroInvalido.focus();
+    return;
+  }
+
+  // --- NOVA VALIDAÇÃO DE NÚMEROS NA REF ---
+  const inputRef = document.getElementById("referencia");
+  const valorRef = inputRef.value.trim();
+  
+  // O teste /^\d+$/ verifica se o texto contém APENAS dígitos de 0 a 9
+  const apenasNumeros = /^\d+$/.test(valorRef);
+
+  if (!apenasNumeros) {
+    alert("⚠️ Atenção: No campo Referência, digite apenas números!");
+    inputRef.classList.add("invalid");
+    inputRef.focus();
+    return; // Interrompe o envio se não for número
+  }
+  // ----------------------------------------
+  
+  // 2. Coleta dos dados (agora com certeza de que estão preenchidos e válidos)
+  const encarregada = document.getElementById("encarregada").value.trim();
+  const peca = document.getElementById("peca").value.trim();
+  const referencia = valorRef; // Usando o valor validado
+  const observacao = document.getElementById("observacao").value.trim();
+
+  const novoPedido = {
+    encarregada, peca, referencia, observacao,
+    createdAt: Date.now(), enviado: false
+  };
+
+  // 3. Envio para o Firebase
+  await push(pedidosRef, novoPedido);
+  
+  // 4. Limpeza e foco
+  form.reset();
+  document.getElementById("encarregada").focus();
+});
+  
+// ===== Real-time Updates =====
+onChildAdded(pedidosRef, (snap) => {
+  const pedido = snap.val();
+  const id = snap.key;
+  if (!document.getElementById("pedido-" + id)) renderPedido(id, pedido);
+
+});
+
+onChildChanged(pedidosRef, (snap) => {
+  const pedido = snap.val();
+  const id = snap.key;
+  const el = document.getElementById("pedido-" + id);
+  if (el) el.remove();
+  renderPedido(id, pedido);
+
+});
+
+onChildRemoved(pedidosRef, (snap) => {
+  const el = document.getElementById("pedido-" + snap.key);
+  if (el) el.remove();
+
+});
+
+// ===== Contador de Pedidos =====
+// Monitora e atualiza o contador de pedidos em tempo real usando onValue
+onValue(pedidosRef, (snapshot) => {
+  const total = snapshot.size || snapshot.numChildren();
+  document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
+});
+
+// Carregar Mensagens em Tempo Real
+
+
+function carregarMensagens() {
+  const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
+  onValue(msgRef, (snapshot) => {
+    caixaMensagens.innerHTML = "";
+    const prefixoCor = chatAtual.split('_')[0].toLowerCase();
+
+    snapshot.forEach((child) => {
+      const data = child.val();
+      const p = document.createElement("p");
+      
+      if (data.origem === "Estoque") {
+        p.className = `msg-estoque cor-balao-${prefixoCor}`;
+        p.innerHTML = `<strong>Estoque:</strong> ${data.texto}`;
+      } else {
+        // Se a origem for o nome de uma encarregada, ela fica na esquerda
+        p.className = "msg-producao";
+        p.innerHTML = `<strong>${data.origem}:</strong> ${data.texto}`;
+      }
+
+      caixaMensagens.appendChild(p);
+    });
+    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
+  });
+}
+
+// Função para mudar de chat (precisa estar no objeto window para o onclick do HTML funcionar)
+window.abrirChat = (nome) => {
+  chatAtual = nome;
+  const container = document.getElementById("container-chat");
+  const caixaMsgs = document.getElementById("caixa-mensagens");
+
+  // 1. Atualiza os botões (Abas) - Procura pelo atributo onclick para não errar
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const clickAttr = btn.getAttribute('onclick');
+    btn.classList.toggle('active', clickAttr.includes(`'${nome}'`));
+  });
+
+  // 2. Limpa classes de cores antigas
+  container.className = ""; 
+  caixaMsgs.className = ""; 
+  caixaMsgs.style.height = "150px"; 
+  caixaMsgs.style.overflowY = "auto";
+  caixaMsgs.style.padding = "15px";
+
+  // 3. Aplica a cor baseada no nome
+  const prefixo = nome.split('_')[0].toLowerCase(); 
+  container.classList.add(`border-${prefixo}`);
+  caixaMsgs.classList.add(`bg-${prefixo}`);
+
+  carregarMensagens();
+};
+
+// Enviar Mensagem do Chat
+
+btnEnviarMsg.addEventListener("click", async () => {
+  const texto = inputMsg.value.trim();
+  
+  // Lógica Automática: Pega o nome do chat atual e limpa o que vem depois do "_"
+  // Exemplo: "Sonia_Danielly" vira "Sonia" / "Dalva" continua "Dalva"
+  const nomeAutomatico = chatAtual.split('_')[0];
+
+  if (texto === "") return;
+
+  await push(ref(db, `chats/${chatAtual}`), {
+    texto: texto,
+    origem: nomeAutomatico, // Nome automático baseado na aba aberta
+    timestamp: Date.now()
+  });
+  inputMsg.value = "";
+});
+
+// Inicia o chat carregando a primeira aba por padrão
+carregarMensagens();
+window.abrirChat('Sonia_Danielly');
+
+</script>
+
+</body>
+</html>
