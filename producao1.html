@@ -338,7 +338,8 @@ onChildRemoved(pedidosRef, (snap) => {
 });
 
 onValue(pedidosRef, (snap) => {
-  document.getElementById("contadorPedidos").innerText = `Pedidos: ${snap.numChildren()}`;
+  const total = snap.exists() ? Object.keys(snap.val()).length : 0;
+  document.getElementById("contadorPedidos").innerText = `Pedidos: ${total}`;
 });
 
 // Botão Limpar
