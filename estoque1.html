@@ -266,7 +266,10 @@ let chatAtual = "Sonia_Danielly";
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
-
+ 
+// Crie a variável logo abaixo das configurações do Firebase
+const pedidosExistentes = new Set();
+ 
 // Som padrão para novas mensagens do chat
 const somChat = new Audio("https://www.soundjay.com/buttons/sounds/button-20.mp3");
 let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
