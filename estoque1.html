@@ -268,6 +268,10 @@ const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
 
+// Som padrão para novas mensagens do chat
+const somChat = new Audio("https://actions.google.com/sounds/v1/foley/pop_top_open.ogg");
+let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
+
 // Som de notificação
 const somNotificacao = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 const pedidosExistentes = new Set();
@@ -362,13 +366,21 @@ function carregarMensagens() {
       }
       caixaMensagens.appendChild(p);
     });
+    
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
+
+    // SÓ TOCA O SOM SE NÃO FOR A PRIMEIRA VEZ QUE ABRE A ABA
+    if (!primeiraCargaChat) {
+      somChat.play().catch(() => console.log("Som aguardando interação do usuário."));
+    }
+    primeiraCargaChat = false; 
   });
 }
 
 // ===== Função Abrir Chat =====
 window.abrirChat = (nome) => {
   chatAtual = nome;
+  primeiraCargaChat = true; // Reinicia a trava para não tocar o som do histórico
   const container = document.getElementById("container-chat");
   const caixaMsgs = document.getElementById("caixa-mensagens");
   const prefixo = nome.split('_')[0].toLowerCase();
