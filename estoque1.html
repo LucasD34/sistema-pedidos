@@ -271,7 +271,7 @@ const caixaMensagens = document.getElementById("caixa-mensagens");
 const pedidosExistentes = new Set();
  
 // Som padrão para novas mensagens do chat
-const somNotificacao = new Audio("notificacao.mp3");
+const somNotificacao = new Audio("notificacao.mp3?v=1");
 let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
 
 
@@ -397,9 +397,12 @@ function carregarMensagens() {
 
       // Toca apenas se não for a carga inicial E se a mensagem NÃO veio do estoque
       if (!primeiraCargaChat && ultimaMsg.origem !== "Estoque") {
+    // Tenta tocar o MP3 primeiro
+    somNotificacao.play().catch(() => {
+        // Se o MP3 falhar (404), ele usa o Bip como reserva
         tocarBip(); 
-      }
-    }
+    });
+}
     
     primeiraCargaChat = false; 
   });
