@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" href="favicon.ico" type="image/x-icon">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🏭 Produção - Sistema de Pedidos </title> 
@@ -329,8 +330,6 @@ onValue(pedidosRef, (snapshot) => {
 });
 
 // Carregar Mensagens em Tempo Real
-
-
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   onValue(msgRef, (snapshot) => {
@@ -341,13 +340,17 @@ function carregarMensagens() {
       const data = child.val();
       const p = document.createElement("p");
       
+      // Formata a hora (Ex: 08:35)
+      const horaFormatada = data.timestamp 
+        ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
+        : "";
+
       if (data.origem === "Estoque") {
         p.className = `msg-estoque cor-balao-${prefixoCor}`;
-        p.innerHTML = `<strong>Estoque:</strong> ${data.texto}`;
+        p.innerHTML = `<small style="opacity: 0.7; font-size: 10px;">${horaFormatada}</small><br><strong>Estoque:</strong> ${data.texto}`;
       } else {
-        // Se a origem for o nome de uma encarregada, ela fica na esquerda
         p.className = "msg-producao";
-        p.innerHTML = `<strong>${data.origem}:</strong> ${data.texto}`;
+        p.innerHTML = `<small style="opacity: 0.7; font-size: 10px;">${horaFormatada}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
       }
 
       caixaMensagens.appendChild(p);
@@ -355,7 +358,6 @@ function carregarMensagens() {
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
   });
 }
-
 // Função para mudar de chat (precisa estar no objeto window para o onclick do HTML funcionar)
 window.abrirChat = (nome) => {
   chatAtual = nome;
