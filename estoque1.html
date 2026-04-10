@@ -358,39 +358,8 @@ function renderPedido(id, pedido) {
   };
   div.appendChild(btnApagar);
 }
-
-// ===== Chat: Carregar Mensagens =====
-function carregarMensagens() {
-  const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
-  onValue(msgRef, (snapshot) => {
-    caixaMensagens.innerHTML = "";
-    
-    snapshot.forEach((child) => {
-      const data = child.val();
-      const p = document.createElement("p");
-      const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
-
-      if (data.origem === "Estoque") {
-        p.className = "msg-estoque";
-        p.style.backgroundColor = "#e1f5fe";
-        p.style.border = "2px solid #0b63d6";
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
-      } else {
-        p.className = "msg-producao";
-        const prefixo = data.origem.split('_')[0].toLowerCase();
-        const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
-        p.style.backgroundColor = cor.bg;
-        p.style.border = `2px solid ${cor.border}`;
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
-      }
-      caixaMensagens.appendChild(p);
-    });
-    
-    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-
-    
-   // ===== Chat: Carregar Mensagens =====
+ // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
