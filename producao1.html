@@ -55,26 +55,30 @@ button:hover { opacity: 0.9; }
 }
 
 
-#contadorPedidos {
-  position: fixed;
-  top: 10px;
-  right: 15px;
-  background-color: #0b63d6;
-  color: #fff;
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-weight: bold;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  z-index: 1000;
+/* ====== AJUSTE DO CABEÇALHO ====== */
+.header-topo {
+  display: flex;
+  justify-content: space-between; /* Logo na esquerda, contador na direita */
+  align-items: center;
+  max-width: 900px;
+  margin: 0 auto 15px auto; /* Centraliza e dá espaço para o chat abaixo */
+  padding: 5px 0;
 }
 
-footer { text-align: center; font-size: 13px; color: #777; margin-top: 25px; }
-
 .logo-elka { 
-width: 170px; 
-position: relative; /* rola junto com a página */ 
-top: 10px; 
-left: 10px;
+  width: 150px; /* Tamanho ajustado */
+  height: auto;
+}
+
+#contadorPedidos {
+  /* Removemos o 'fixed' e 'top' para ele não flutuar sobre o chat */
+  background-color: #0b63d6;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  font-size: 14px;
 }
 
 /* Estilo base das abas */
@@ -130,7 +134,10 @@ left: 10px;
 </style>
 </head>
 <body>
-<img src="logo-elka.png" alt="Logo Elka" class="logo-elka">
+<div class="header-topo">
+  <img src="logo-elka.png" alt="Logo Elka" class="logo-elka">
+  <div id="contadorPedidos">Pedidos: 0</div>
+</div>
 
 <div id="container-chat" style="background: #fff; border: 2px solid #0b63d6; border-radius: 12px; margin-bottom: 20px; overflow: hidden;">
   <div id="abas-chat" style="display: flex; background: #eef4fb; border-bottom: 1px solid #ccc; overflow-x: auto;">
@@ -150,8 +157,6 @@ left: 10px;
     <button id="btnEnviarMsg" style="background: #0b63d6; color: white; font-weight: bold;">Enviar</button>
   </div>
 </div>
-
-<div id="contadorPedidos">Pedidos: 0</div>
 
 <h1>🏭 Produção - Sistema de Pedidos</h1>
 
