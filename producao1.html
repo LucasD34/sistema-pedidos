@@ -219,103 +219,27 @@ const coresConfig = {
 
 // ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
+  if (document.getElementById("pedido-" + id)) return; // Evita duplicados na tela
+  
   const div = document.createElement("div");
   div.className = "pedido";
   div.id = "pedido-" + id;
-  let html = `<strong>${pedido.peca}</strong><div class="meta">👩‍🏭 ${pedido.encarregada}</div><div class="meta">📌 Ref: ${pedido.referencia}</div>${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}<div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>`;
+  
+  let html = `
+    <strong>${pedido.peca}</strong>
+    <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
+    <div class="meta">📌 Ref: ${pedido.referencia}</div>
+    ${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}
+    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
+  `;
+
   if (pedido.enviado && pedido.dataEnvio) {
     html += `<div class="enviado-destaque">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>`;
   }
+
   div.innerHTML = html;
   pedido.enviado ? enviados.prepend(div) : pendentes.prepend(div);
 }
-// ===== Formulário =====
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  
-  // 1. Coleta e validação dos campos
-  const campos = ["encarregada", "peca", "referencia"];
-  let formValido = true;
-  
-  campos.forEach(id => {
-    const input = document.getElementById(id);
-    if (input.value.trim() === "") {
-      input.classList.add("invalid");
-      formValido = false;
-    } else {
-      input.classList.remove("invalid");
-    }
-  });
-
-  if (!formValido) {
-    const primeiroInvalido = document.querySelector(".invalid");
-    if (primeiroInvalido) primeiroInvalido.focus();
-    return;
-  }
-
-  // --- NOVA VALIDAÇÃO DE NÚMEROS NA REF ---
-  const inputRef = document.getElementById("referencia");
-  const valorRef = inputRef.value.trim();
-  
-  // O teste /^\d+$/ verifica se o texto contém APENAS dígitos de 0 a 9
-  const apenasNumeros = /^\d+$/.test(valorRef);
-
-  if (!apenasNumeros) {
-    alert("⚠️ Atenção: No campo Referência, digite apenas números!");
-    inputRef.classList.add("invalid");
-    inputRef.focus();
-    return; // Interrompe o envio se não for número
-  }
-  // ----------------------------------------
-  
-  // 2. Coleta dos dados (agora com certeza de que estão preenchidos e válidos)
-  const encarregada = document.getElementById("encarregada").value.trim();
-  const peca = document.getElementById("peca").value.trim();
-  const referencia = valorRef; // Usando o valor validado
-  const observacao = document.getElementById("observacao").value.trim();
-
-  const novoPedido = {
-    encarregada, peca, referencia, observacao,
-    createdAt: Date.now(), enviado: false
-  };
-
-  // 3. Envio para o Firebase
-  await push(pedidosRef, novoPedido);
-  
-  // 4. Limpeza e foco
-  form.reset();
-  document.getElementById("encarregada").focus();
-});
-  
-// ===== Real-time Updates =====
-onChildAdded(pedidosRef, (snap) => {
-  const pedido = snap.val();
-  const id = snap.key;
-  if (!document.getElementById("pedido-" + id)) renderPedido(id, pedido);
-
-});
-
-onChildChanged(pedidosRef, (snap) => {
-  const pedido = snap.val();
-  const id = snap.key;
-  const el = document.getElementById("pedido-" + id);
-  if (el) el.remove();
-  renderPedido(id, pedido);
-
-});
-
-onChildRemoved(pedidosRef, (snap) => {
-  const el = document.getElementById("pedido-" + snap.key);
-  if (el) el.remove();
-
-});
-
-// ===== Contador de Pedidos =====
-// Monitora e atualiza o contador de pedidos em tempo real usando onValue
-onValue(pedidosRef, (snapshot) => {
-  const total = snapshot.size || snapshot.numChildren();
-  document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
-});
 
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
@@ -331,14 +255,14 @@ function carregarMensagens() {
         p.className = "msg-estoque";
         p.style.backgroundColor = "#e1f5fe";
         p.style.border = "2px solid #0b63d6";
-        p.innerHTML = `<small style="opacity: 0.8; font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
       } else {
         p.className = "msg-producao";
         const prefixo = data.origem.split('_')[0].toLowerCase();
         const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
         p.style.backgroundColor = cor.bg;
         p.style.border = `2px solid ${cor.border}`;
-        p.innerHTML = `<small style="opacity: 0.8; font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
       }
       caixaMensagens.appendChild(p);
     });
@@ -346,7 +270,7 @@ function carregarMensagens() {
   });
 }
 
-// ===== Função para Abrir Chat (Exposta para o HTML) =====
+// ===== Função para Abrir Chat =====
 window.abrirChat = (nome) => {
   chatAtual = nome;
   const container = document.getElementById("container-chat");
@@ -357,14 +281,13 @@ window.abrirChat = (nome) => {
     btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${nome}'`));
   });
 
-  container.className = ""; 
   container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
   caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
 
   carregarMensagens();
 };
 
-// ===== Enviar Mensagem =====
+// ===== Enviar Mensagem do Chat =====
 btnEnviarMsg.onclick = async () => {
   const texto = inputMsg.value.trim();
   const nomeAuto = chatAtual.split('_')[0];
@@ -373,19 +296,54 @@ btnEnviarMsg.onclick = async () => {
   inputMsg.value = "";
 };
 
-// ===== Eventos de Pedidos =====
+// ===== Formulário de Pedidos (ÚNICO) =====
 form.onsubmit = async (e) => {
   e.preventDefault();
-  const refVal = document.getElementById("referencia").value.trim();
-  if (!/^\d+$/.test(refVal)) return alert("Apenas números na Referência!");
-  const novo = { encarregada: document.getElementById("encarregada").value.trim(), peca: document.getElementById("peca").value.trim(), referencia: refVal, observacao: document.getElementById("observacao").value.trim(), createdAt: Date.now(), enviado: false };
-  await push(pedidosRef, novo);
+  const inputRef = document.getElementById("referencia");
+  const valorRef = inputRef.value.trim();
+
+  // Validação de números
+  if (!/^\d+$/.test(valorRef)) {
+    alert("⚠️ Atenção: No campo Referência, digite apenas números!");
+    inputRef.focus();
+    return;
+  }
+
+  const novoPedido = {
+    encarregada: document.getElementById("encarregada").value.trim(),
+    peca: document.getElementById("peca").value.trim(),
+    referencia: valorRef,
+    observacao: document.getElementById("observacao").value.trim(),
+    createdAt: Date.now(),
+    enviado: false
+  };
+
+  await push(pedidosRef, novoPedido);
   form.reset();
+  document.getElementById("encarregada").focus();
 };
 
+// ===== Sincronização em Tempo Real (ÚNICA) =====
 onChildAdded(pedidosRef, (snap) => renderPedido(snap.key, snap.val()));
-onValue(pedidosRef, (snap) => document.getElementById("contadorPedidos").innerText = `Pedidos: ${snap.numChildren()}`);
 
-// Início
+onChildChanged(pedidosRef, (snap) => {
+  const el = document.getElementById("pedido-" + snap.key);
+  if (el) el.remove();
+  renderPedido(snap.key, snap.val());
+});
+
+onChildRemoved(pedidosRef, (snap) => {
+  const el = document.getElementById("pedido-" + snap.key);
+  if (el) el.remove();
+});
+
+onValue(pedidosRef, (snap) => {
+  document.getElementById("contadorPedidos").innerText = `Pedidos: ${snap.numChildren()}`;
+});
+
+// Botão Limpar
+document.getElementById("btnLimpar").onclick = () => form.reset();
+
+// Inicialização
 window.abrirChat('Sonia_Danielly');
-  </script>
+</script>
