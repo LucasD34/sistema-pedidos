@@ -182,7 +182,7 @@ left: 10px;
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, limitToLast, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, limitToLast, query, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
@@ -220,6 +220,19 @@ const coresConfig = {
   "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
   "elane": { bg: "#fdf7f2", border: "#e67e22" }
 };
+
+async function marcarComoLida(chat) {
+  const msgRef = query(ref(db, `chats/${chat}`), limitToLast(15));
+  onValue(msgRef, (snapshot) => {
+    snapshot.forEach((child) => {
+      const data = child.val();
+      // Se a mensagem veio do Estoque e não está lida, marca como lida
+      if (data.origem === "Estoque" && data.visualizada === false) {
+        update(ref(db, `chats/${chat}/${child.key}`), { visualizada: true });
+      }
+    });
+  }, { onlyOnce: true });
+}  
 
 // ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
@@ -287,6 +300,8 @@ function carregarMensagens() {
     });
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
+    marcarComoLida(chatAtual);
+    
     // --- LÓGICA DO SOM ---
     const mensagens = snapshot.val();
     if (mensagens && !primeiraCargaChat) {
@@ -305,6 +320,7 @@ function carregarMensagens() {
 window.abrirChat = (nome) => {
   chatAtual = nome;
   primeiraCargaChat = true;
+  marcarComoLida(nome);
   const container = document.getElementById("container-chat");
   const caixaMsgs = document.getElementById("caixa-mensagens");
   const prefixo = nome.split('_')[0].toLowerCase();
@@ -324,7 +340,12 @@ btnEnviarMsg.onclick = async () => {
   const texto = inputMsg.value.trim();
   const nomeAuto = chatAtual.split('_')[0];
   if (!texto) return;
-  await push(ref(db, `chats/${chatAtual}`), { texto, origem: nomeAuto, timestamp: Date.now() });
+  await push(ref(db, `chats/${chatAtual}`), { 
+    texto, 
+    origem: nomeAuto, 
+    timestamp: Date.now(),
+    visualizada: false 
+  });
   inputMsg.value = "";
 };
 
