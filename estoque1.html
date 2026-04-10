@@ -271,9 +271,6 @@ const caixaMensagens = document.getElementById("caixa-mensagens");
 const somChat = new Audio("https://www.soundjay.com/buttons/sounds/button-20.mp3");
 let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
 
-// Som de notificação
-const somNotificacao = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-const pedidosExistentes = new Set();
 
 // Cores das Encarregadas (Padronizado com a Produção)
 const coresConfig = {
@@ -283,6 +280,25 @@ const coresConfig = {
   "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
   "elane": { bg: "#fdf7f2", border: "#e67e22" }
 };
+
+ // Função que gera um som de "Bip" eletrônico sem precisar de link
+function tocarBip() {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+
+    oscillator.type = "sine"; // Som suave
+    oscillator.frequency.setValueAtTime(880, context.currentTime); // Frequência do som
+    
+    gain.gain.setValueAtTime(0.1, context.currentTime); // Volume (0.1 é baixo)
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.5);
+}
 
 // ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
@@ -368,10 +384,10 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    // SÓ TOCA O SOM SE NÃO FOR A PRIMEIRA VEZ QUE ABRE A ABA
-    if (!primeiraCargaChat) {
-      somChat.play().catch(() => console.log("Som aguardando interação do usuário."));
-    }
+ //=== Tocar Bip===
+if (!primeiraCargaChat) {
+  tocarBip(); 
+}
     primeiraCargaChat = false; 
   });
 }
