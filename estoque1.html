@@ -290,7 +290,7 @@ function tocarBip() {
     oscillator.type = "sine"; // Som suave
     oscillator.frequency.setValueAtTime(880, context.currentTime); // Frequência do som
     
-    gain.gain.setValueAtTime(0.1, context.currentTime); // Volume (0.1 é baixo)
+    gain.gain.setValueAtTime(0.4, context.currentTime); // Volume (0.1 é baixo)
     gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
 
     oscillator.connect(gain);
@@ -359,8 +359,10 @@ function renderPedido(id, pedido) {
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
+  
   onValue(msgRef, (snapshot) => {
     caixaMensagens.innerHTML = "";
+    
     snapshot.forEach((child) => {
       const data = child.val();
       const p = document.createElement("p");
@@ -384,10 +386,18 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
- //=== Tocar Bip===
-if (!primeiraCargaChat) {
-  tocarBip(); 
-}
+    // === Lógica Inteligente do Bip ===
+    const mensagens = snapshot.val();
+    if (mensagens) {
+      const chaves = Object.keys(mensagens);
+      const ultimaMsg = mensagens[chaves[chaves.length - 1]];
+
+      // Toca apenas se não for a carga inicial E se a mensagem NÃO veio do estoque
+      if (!primeiraCargaChat && ultimaMsg.origem !== "Estoque") {
+        tocarBip(); 
+      }
+    }
+    
     primeiraCargaChat = false; 
   });
 }
