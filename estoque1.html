@@ -241,9 +241,8 @@ footer {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import { getDatabase, ref, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, push, limitToLast, query } 
-from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
+import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, limitToLast, query, update, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+ 
 const firebaseConfig = {
   apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
   authDomain: "sistema-de-pedidos-208dd.firebaseapp.com",
@@ -284,6 +283,19 @@ const coresConfig = {
   "elane": { bg: "#fdf7f2", border: "#e67e22" }
 };
 
+async function marcarComoLidaEstoque(chat) {
+  const msgRef = query(ref(db, `chats/${chat}`), limitToLast(15));
+  onValue(msgRef, (snapshot) => {
+    snapshot.forEach((child) => {
+      const data = child.val();
+      // Se a mensagem NÃO veio do Estoque e não está lida, o estoque marca como lida
+      if (data.origem !== "Estoque" && data.visualizada === false) {
+        update(ref(db, `chats/${chat}/${child.key}`), { visualizada: true });
+      }
+    });
+  }, { onlyOnce: true });
+}
+ 
  // Função que gera um som de "Bip" eletrônico sem precisar de link
 function tocarBip() {
     const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -359,7 +371,7 @@ function renderPedido(id, pedido) {
   div.appendChild(btnApagar);
 }
   
- // ===== Chat: Carregar Mensagens =====
+// ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
@@ -372,46 +384,57 @@ function carregarMensagens() {
       const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
 
       if (data.origem === "Estoque") {
+        // --- MENSAGENS QUE VOCÊ ENVIA ---
         p.className = "msg-estoque";
         p.style.backgroundColor = "#e1f5fe";
         p.style.border = "2px solid #0b63d6";
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
+        
+        const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
+
+        p.innerHTML = `
+          <small style="font-size: 11px;">${hora}</small><br>
+          <strong>Estoque:</strong> ${data.texto}
+          <div style="text-align: right; margin-top: 2px;">${tique}</div>
+        `;
       } else {
+        // --- MENSAGENS QUE AS ENCARREGADAS ENVIAM ---
         p.className = "msg-producao";
         const prefixo = data.origem.split('_')[0].toLowerCase();
         const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
+        
         p.style.backgroundColor = cor.bg;
         p.style.border = `2px solid ${cor.border}`;
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+        
+        p.innerHTML = `
+          <small style="font-size: 11px;">${hora}</small><br>
+          <strong>${data.origem}:</strong> ${data.texto}
+        `;
       }
+
       caixaMensagens.appendChild(p);
     });
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    // === Lógica de Som Atualizada ===
+    // --- LÓGICA DE SOM ---
     const mensagens = snapshot.val();
-    if (mensagens) {
+    if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
 
-      // Toca apenas se não for a carga inicial E se a mensagem veio da Produção
-      if (!primeiraCargaChat && ultimaMsg.origem !== "Estoque") {
-        // Tenta tocar o seu arquivo MP3 primeiro
-        somNotificacao.play().catch(() => {
-          // Se o arquivo MP3 falhar ou não existir, toca o Bip reserva
-          tocarBip(); 
-        });
+      if (ultimaMsg.origem !== "Estoque") {
+        somNotificacao.play().catch(() => tocarBip());
       }
     }
     
     primeiraCargaChat = false; 
   });
 }
-
+ 
 // ===== Função Abrir Chat =====
 window.abrirChat = (nome) => {
   chatAtual = nome;
+  marcarComoLidaEstoque(nome);
   primeiraCargaChat = true; // Reinicia a trava para não tocar o som do histórico
   const container = document.getElementById("container-chat");
   const caixaMsgs = document.getElementById("caixa-mensagens");
@@ -432,7 +455,13 @@ window.abrirChat = (nome) => {
 btnEnviarMsg.onclick = async () => {
   const texto = inputMsg.value.trim();
   if (!texto) return;
-  await push(ref(db, `chats/${chatAtual}`), { texto, origem: "Estoque", timestamp: Date.now() });
+  
+  await push(ref(db, `chats/${chatAtual}`), { 
+    texto, 
+    origem: "Estoque", 
+    timestamp: Date.now(),
+    visualizada: false // <--- ADICIONE ISSO
+  });
   inputMsg.value = "";
 };
 
