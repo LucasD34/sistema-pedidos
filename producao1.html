@@ -337,28 +337,33 @@ function carregarMensagens() {
     caixaMensagens.innerHTML = "";
     const prefixoCor = chatAtual.split('_')[0].toLowerCase();
 
-    snapshot.forEach((child) => {
-      const data = child.val();
-      const p = document.createElement("p");
-      
-      // Formata a hora (Ex: 08:35)
-      const horaFormatada = data.timestamp 
-        ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
-        : "";
+   snapshot.forEach((child) => {
+  const data = child.val();
+  const p = document.createElement("p");
+  
+  const horaFormatada = data.timestamp 
+    ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
+    : "";
 
-      if (data.origem === "Estoque") {
-        p.className = `msg-estoque cor-balao-${prefixoCor}`;
-        p.innerHTML = `<small style="opacity: 1.1; font-size: 14px;">${horaFormatada}</small><br><strong>Estoque:</strong> ${data.texto}`;
-      } else {
-        p.className = "msg-producao";
-        p.innerHTML = `<small style="opacity: 1.1; font-size: 14px;">${horaFormatada}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
-      }
+  if (data.origem === "Estoque") {
+    // ESTOQUE: Sempre azul e na direita
+    p.className = "msg-estoque";
+    p.style.backgroundColor = "#e1f5fe"; 
+    p.style.border = "2px solid #0b63d6";
+    p.innerHTML = `<small style="opacity: 0.8; font-size: 11px;">${horaFormatada}</small><br><strong>Estoque:</strong> ${data.texto}`;
+  } else {
+    // ENCARREGADAS: Cor específica baseada no nome de quem enviou
+    p.className = "msg-producao";
+    
+    // Identifica o prefixo para pegar a cor (Sonia, Dalva, etc)
+    const prefixo = data.origem.split('_')[0].toLowerCase(); 
+    p.classList.add(`cor-balao-${prefixo}`); 
+    
+    p.innerHTML = `<small style="opacity: 0.8; font-size: 11px;">${horaFormatada}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+  }
 
-      caixaMensagens.appendChild(p);
-    });
-    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-  });
-}
+  caixaMensagens.appendChild(p);
+});
 // Função para mudar de chat (precisa estar no objeto window para o onclick do HTML funcionar)
 window.abrirChat = (nome) => {
   chatAtual = nome;
