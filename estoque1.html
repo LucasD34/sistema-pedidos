@@ -262,27 +262,33 @@ const pedidosRef = ref(db, "pedidos");
 const listaPendentes = document.getElementById("listaPendentes");
 const listaEnviados = document.getElementById("listaEnviados");
 
-
-// Variáveis do Chat no Estoque
+// Variáveis do Chat
 let chatAtual = "Sonia_Danielly";
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
 
-
 // Som de notificação
 const somNotificacao = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-somNotificacao.volume = 1.0;
-
-// Controlar pedidos existentes
 const pedidosExistentes = new Set();
 
+// Cores das Encarregadas (Padronizado com a Produção)
+const coresConfig = {
+  "sonia": { bg: "#fff0f5", border: "#ff69b4" },
+  "dalva": { bg: "#fdf2f2", border: "#e74c3c" },
+  "josileide": { bg: "#f2fdf6", border: "#2ecc71" },
+  "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
+  "elane": { bg: "#fdf7f2", border: "#e67e22" }
+};
+
+// ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
+  if (document.getElementById("i-" + id)) return; // Evita duplicados
+
   const div = document.createElement("div");
   div.className = "item";
   div.id = "i-" + id;
 
-  // Adicionamos um checkbox lateral com o ID do Firebase no "value"
   let html = `
   <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
     <input type="checkbox" class="pedido-checkbox" value="${id}" style="transform: scale(1.5); margin-top: 5px;">
@@ -294,33 +300,28 @@ function renderPedido(id, pedido) {
       ${pedido.observacao ? `<div class="meta">📝 ${pedido.observacao}</div>` : ""}
       ${pedido.enviado && pedido.dataEnvio ? `<div class="meta enviado">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>` : ""}
     </div>
-  </div>`
- 
+  </div>`;
+  
   div.innerHTML = html;
 
   if (!pedido.enviado) {
-    // Campo de observação opcional
-    const inputObs = document.createElement("textarea"); // Alterado para textarea para melhor visualização e entrada de texto
+    const inputObs = document.createElement("textarea");
     inputObs.rows = "2";
-    inputObs.placeholder = "📝 Observação (opcional) - Será enviada para a Produção";
+    inputObs.placeholder = "📝 Observação opcional para a Produção";
     inputObs.value = pedido.observacao || "";
-    inputObs.style.marginTop = "5px";
-    inputObs.style.width = "100%";
-    inputObs.style.resize = "vertical";
+    inputObs.style.cssText = "margin-top: 5px; width: 100%; resize: vertical;";
     div.appendChild(inputObs);
 
     const btnEnviar = document.createElement("button");
     btnEnviar.className = "btn-enviar";
     btnEnviar.textContent = "✅ Marcar como enviado";
-    btnEnviar.addEventListener("click", () => {
-      const novaObs = inputObs.value.trim();
+    btnEnviar.onclick = () => {
       update(ref(db, "pedidos/" + id), { 
         enviado: true, 
         dataEnvio: Date.now(),
-        observacao: novaObs // Garante que a observação seja salva no Firebase
+        observacao: inputObs.value.trim() 
       });
-    });
-
+    };
     div.appendChild(btnEnviar);
     listaPendentes.prepend(div);
   } else {
@@ -330,39 +331,82 @@ function renderPedido(id, pedido) {
   const btnApagar = document.createElement("button");
   btnApagar.className = "btn-secondary";
   btnApagar.textContent = "🗑 Apagar";
-  btnApagar.addEventListener("click", () => {
-    if (confirm("Tem certeza que deseja apagar este pedido?")) {
-      remove(ref(db, "pedidos/" + id));
-    }
-  });
+  btnApagar.onclick = () => {
+    if (confirm("Apagar este pedido?")) remove(ref(db, "pedidos/" + id));
+  };
   div.appendChild(btnApagar);
-
-  return div;
 }
 
-// ====== Monitorar pedidos em tempo real ======
+// ===== Chat: Carregar Mensagens =====
+function carregarMensagens() {
+  const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
+  onValue(msgRef, (snapshot) => {
+    caixaMensagens.innerHTML = "";
+    snapshot.forEach((child) => {
+      const data = child.val();
+      const p = document.createElement("p");
+      const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
+
+      if (data.origem === "Estoque") {
+        p.className = "msg-estoque";
+        p.style.backgroundColor = "#e1f5fe";
+        p.style.border = "2px solid #0b63d6";
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
+      } else {
+        p.className = "msg-producao";
+        const prefixo = data.origem.split('_')[0].toLowerCase();
+        const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
+        p.style.backgroundColor = cor.bg;
+        p.style.border = `2px solid ${cor.border}`;
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+      }
+      caixaMensagens.appendChild(p);
+    });
+    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
+  });
+}
+
+// ===== Função Abrir Chat =====
+window.abrirChat = (nome) => {
+  chatAtual = nome;
+  const container = document.getElementById("container-chat");
+  const caixaMsgs = document.getElementById("caixa-mensagens");
+  const prefixo = nome.split('_')[0].toLowerCase();
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const nomeBotao = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
+    btn.classList.toggle('active', nomeBotao === nome);
+  });
+
+  container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
+  caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
+
+  carregarMensagens();
+};
+
+// Enviar Mensagem
+btnEnviarMsg.onclick = async () => {
+  const texto = inputMsg.value.trim();
+  if (!texto) return;
+  await push(ref(db, `chats/${chatAtual}`), { texto, origem: "Estoque", timestamp: Date.now() });
+  inputMsg.value = "";
+};
+
+// ====== Sincronização em Tempo Real ======
 onChildAdded(pedidosRef, (snap) => {
-  const pedido = snap.val();
   const id = snap.key;
-
-  if (!document.getElementById("i-" + id)) renderPedido(id, pedido);
-
+  renderPedido(id, snap.val());
+  
   if (!pedidosExistentes.has(id)) {
     pedidosExistentes.add(id);
-    setTimeout(() => {
-      somNotificacao.play().catch(() => {
-        console.log("🔇 Som bloqueado até interação do usuário.");
-      });
-    }, 500);
+    somNotificacao.play().catch(() => {});
   }
 });
 
 onChildChanged(pedidosRef, (snap) => {
-  const pedido = snap.val();
-  const id = snap.key;
-  const el = document.getElementById("i-" + id);
+  const el = document.getElementById("i-" + snap.key);
   if (el) el.remove();
-  renderPedido(id, pedido);
+  renderPedido(snap.key, snap.val());
 });
 
 onChildRemoved(pedidosRef, (snap) => {
@@ -370,127 +414,41 @@ onChildRemoved(pedidosRef, (snap) => {
   if (el) el.remove();
 });
 
-// ====== Monitorar e atualizar contador de pedidos em tempo real ======
-onValue(pedidosRef, (snapshot) => {
-  const total = snapshot.size || snapshot.numChildren();
-  document.getElementById("contadorPedidos").textContent = `Pedidos: ${total}`;
+onValue(pedidosRef, (snap) => {
+  document.getElementById("contadorPedidos").innerText = `Pedidos: ${snap.numChildren()}`;
 });
 
- // ====== Lógica de Seleção em Massa ======
-
+// ====== Lógica de Seleção em Massa ======
 const btnSelecionarTodos = document.getElementById("btnSelecionarTodos");
 const btnApagarVarios = document.getElementById("btnApagarVarios");
 
-// Alternar entre selecionar todos e desmarcar todos
-btnSelecionarTodos.addEventListener("click", () => {
+btnSelecionarTodos.onclick = () => {
   const checkboxes = document.querySelectorAll(".pedido-checkbox");
   const todosMarcados = Array.from(checkboxes).every(cb => cb.checked);
-  
   checkboxes.forEach(cb => cb.checked = !todosMarcados);
-  atualizarVisibilidadeBotaoApagar();
-});
+  atualizarBotaoApagar();
+};
 
-// Mostrar ou esconder o botão de apagar baseado na seleção
 document.addEventListener("change", (e) => {
-  if (e.target.classList.contains("pedido-checkbox")) {
-    atualizarVisibilidadeBotaoApagar();
-  }
+  if (e.target.classList.contains("pedido-checkbox")) atualizarBotaoApagar();
 });
 
-function atualizarVisibilidadeBotaoApagar() {
+function atualizarBotaoApagar() {
   const selecionados = document.querySelectorAll(".pedido-checkbox:checked").length;
   btnApagarVarios.style.display = selecionados > 0 ? "block" : "none";
   btnApagarVarios.textContent = `🗑 Apagar Selecionados (${selecionados})`;
 }
 
-// Função para apagar todos os selecionados no Firebase
-btnApagarVarios.addEventListener("click", async () => {
+btnApagarVarios.onclick = async () => {
   const selecionados = document.querySelectorAll(".pedido-checkbox:checked");
-  
-  if (confirm(`Tem certeza que deseja apagar ${selecionados.length} pedidos permanentemente?`)) {
-    for (let cb of selecionados) {
-      const idParaApagar = cb.value;
-      await remove(ref(db, "pedidos/" + idParaApagar));
-    }
-    alert("Pedidos apagados com sucesso!");
+  if (confirm(`Apagar ${selecionados.length} pedidos?`)) {
+    for (let cb of selecionados) await remove(ref(db, "pedidos/" + cb.value));
     btnApagarVarios.style.display = "none";
   }
-});
-
-// Carregar Mensagens em Tempo Real
-function carregarMensagens() {
-  const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
-  onValue(msgRef, (snapshot) => {
-    caixaMensagens.innerHTML = "";
-    const prefixoCor = chatAtual.split('_')[0].toLowerCase();
-
-    snapshot.forEach((child) => {
-      const data = child.val();
-      const p = document.createElement("p");
-      
-      // Formata a hora (Ex: 08:35)
-      const horaFormatada = data.timestamp 
-        ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
-        : "";
-
-      if (data.origem === "Estoque") {
-        p.className = `msg-estoque cor-balao-${prefixoCor}`;
-        p.innerHTML = `<small style="opacity: 1.1; font-size: 14px;">${horaFormatada}</small><br><strong>Estoque:</strong> ${data.texto}`;
-      } else {
-        p.className = "msg-producao";
-        p.innerHTML = `<small style="opacity: 1.1; font-size: 14px;">${horaFormatada}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
-      }
-
-      caixaMensagens.appendChild(p);
-    });
-    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-  });
-}
-
-
-window.abrirChat = (nome) => {
-  chatAtual = nome;
-  const container = document.getElementById("container-chat");
-  const caixaMsgs = document.getElementById("caixa-mensagens");
-
-  // 1. Atualiza os botões (Abas)
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    // Comparamos o nome do chat para ativar o botão correto
-    const nomeBotao = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-    btn.classList.toggle('active', nomeBotao === nome);
-  });
-
-  // 2. Limpa classes de cores antigas (importante para o verde/vermelho aparecerem)
-  container.className = ""; 
-  caixaMsgs.className = ""; 
-
-  // 3. Aplica a nova cor baseada no prefixo
-  const prefixo = nome.split('_')[0].toLowerCase(); 
-  container.classList.add(`border-${prefixo}`);
-  caixaMsgs.classList.add(`bg-${prefixo}`);
-
-  carregarMensagens();
 };
 
-btnEnviarMsg.addEventListener("click", async () => {
-  const texto = inputMsg.value.trim();
-  if (texto === "") return;
-  await push(ref(db, `chats/${chatAtual}`), {
-    texto: texto,
-    origem: "Estoque", // Identifica que você enviou
-    timestamp: Date.now()
-  });
-  inputMsg.value = "";
-});
-
-// Inicia o chat
-carregarMensagens();
-
-// Inicia o chat carregando a primeira aba por padrão
-carregarMensagens();
+// Início
 window.abrirChat('Sonia_Danielly');
- 
 </script>
-
 </body>
 </html>
