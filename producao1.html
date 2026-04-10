@@ -182,10 +182,7 @@ left: 10px;
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-
-import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, update, remove, limitToLast, query }
-
-from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, onChildAdded, onChildChanged, onChildRemoved, limitToLast, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyClTCnRK2dT65VXjmriSrASdJqjmTUVgOs",
@@ -204,44 +201,34 @@ const pedidosRef = ref(db, "pedidos");
 const pendentes = document.getElementById("pendentes");
 const enviados = document.getElementById("enviados");
 const form = document.getElementById("formPedido");
-const btnLimpar = document.getElementById("btnLimpar");
-// Novas variáveis para o Chat
+
+// Variáveis do Chat
 let chatAtual = "Sonia_Danielly";
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
 
+// Cores das Encarregadas
+const coresConfig = {
+  "sonia": { bg: "#fff0f5", border: "#ff69b4" },
+  "dalva": { bg: "#fdf2f2", border: "#e74c3c" },
+  "josileide": { bg: "#f2fdf6", border: "#2ecc71" },
+  "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
+  "elane": { bg: "#fdf7f2", border: "#e67e22" }
+};
 
-// ===== Função para renderizar pedido =====
+// ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
   const div = document.createElement("div");
   div.className = "pedido";
   div.id = "pedido-" + id;
-
-  let html = `
-    <strong>${pedido.peca}</strong>
-    <div class="meta">👩‍🏭 ${pedido.encarregada}</div>
-    <div class="meta">📌 Ref: ${pedido.referencia}</div>
-    ${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}
-    <div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>
-  `;
-
+  let html = `<strong>${pedido.peca}</strong><div class="meta">👩‍🏭 ${pedido.encarregada}</div><div class="meta">📌 Ref: ${pedido.referencia}</div>${pedido.observacao ? `<div class="observacao-destaque">📝 ${pedido.observacao}</div>` : ""}<div class="meta">🕒 Criado em: ${new Date(pedido.createdAt).toLocaleString("pt-BR")}</div>`;
   if (pedido.enviado && pedido.dataEnvio) {
-    const dataEnvio = new Date(pedido.dataEnvio).toLocaleString("pt-BR");
-    html += `<div class="enviado-destaque">✅ Enviado em: ${dataEnvio}</div>`;
+    html += `<div class="enviado-destaque">✅ Enviado em: ${new Date(pedido.dataEnvio).toLocaleString("pt-BR")}</div>`;
   }
-
   div.innerHTML = html;
-
-  if (pedido.enviado) {
-    enviados.prepend(div);
-  } else {
-    pendentes.prepend(div);
-  }
-
-  return div;
+  pedido.enviado ? enviados.prepend(div) : pendentes.prepend(div);
 }
-
 // ===== Formulário =====
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
