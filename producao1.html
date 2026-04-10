@@ -208,6 +208,10 @@ const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
 
+ // SOM DO CHAT 
+const somNotificacao = new Audio("notificacao.mp3?v=" + Date.now());
+let primeiraCargaChat = true;
+  
 // Cores das Encarregadas
 const coresConfig = {
   "sonia": { bg: "#fff0f5", border: "#ff69b4" },
@@ -241,6 +245,21 @@ function renderPedido(id, pedido) {
   pedido.enviado ? enviados.prepend(div) : pendentes.prepend(div);
 }
 
+//======FUNÇÃO BIP SE O SOM FALHAR====
+function tocarBip() {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(880, context.currentTime);
+    gain.gain.setValueAtTime(0.4, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.5);
+}  
+
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
@@ -267,12 +286,25 @@ function carregarMensagens() {
       caixaMensagens.appendChild(p);
     });
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
+
+    // --- LÓGICA DO SOM ---
+    const mensagens = snapshot.val();
+    if (mensagens && !primeiraCargaChat) {
+      const chaves = Object.keys(mensagens);
+      const ultimaMsg = mensagens[chaves[chaves.length - 1]];
+      // Toca se a mensagem vier do Estoque
+      if (ultimaMsg.origem === "Estoque") {
+        somNotificacao.play().catch(() => tocarBip());
+      }
+    }
+    primeiraCargaChat = false;
   });
 }
-
+  
 // ===== Função para Abrir Chat =====
 window.abrirChat = (nome) => {
   chatAtual = nome;
+  primeiraCargaChat = true;
   const container = document.getElementById("container-chat");
   const caixaMsgs = document.getElementById("caixa-mensagens");
   const prefixo = nome.split('_')[0].toLowerCase();
