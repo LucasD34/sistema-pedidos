@@ -296,8 +296,16 @@ const pedidosExistentes = new Set();
 // Som padrão para novas mensagens do chat
 const somNotificacao = new Audio("notificacao.mp3?v=1");
 let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
-let idUltimaMsgTocada = "";
-
+let primeiraCargaChat = true; 
+// Criamos um "estoque" de IDs, um para cada chat
+let ultimosIdsPorChat = {
+  "Sonia_Danielly": "",
+  "Dalva": "",
+  "Josileide": "",
+  "Creuza": "",
+  "Elane": ""
+};
+ 
 // Cores das Encarregadas (Padronizado com a Produção)
 const coresConfig = {
   "sonia": { bg: "#fff0f5", border: "#ff69b4" },
@@ -398,12 +406,9 @@ function renderPedido(id, pedido) {
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const chatParaCarregar = chatAtual;
-  
-  // Referência para as últimas 15 mensagens
   const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
 
   onValue(msgRef, (snapshot) => {
-    // Se o usuário já mudou de aba enquanto os dados carregavam, interrompe
     if (chatParaCarregar !== chatAtual) return;
 
     const mensagens = snapshot.val();
@@ -414,18 +419,27 @@ function carregarMensagens() {
       return;
     }
 
-    // --- LÓGICA DO SOM (Vigia a última mensagem do snapshot) ---
     const chaves = Object.keys(mensagens);
     const idUltimaNoBanco = chaves[chaves.length - 1];
     const dadosUltima = mensagens[idUltimaNoBanco];
 
-    // Toca se: não for carga inicial, a origem NÃO for Estoque e o ID for novo
-    if (!primeiraCargaChat && dadosUltima.origem !== "Estoque" && idUltimaNoBanco !== idUltimaMsgTocada) {
-      idUltimaMsgTocada = idUltimaNoBanco;
+    // --- LÓGICA DO SOM ---
+    // Só toca se:
+    // 1. Não for a primeira carga da página
+    // 2. A mensagem NÃO for do estoque
+    // 3. O ID for diferente do que gravamos para ESTE chat
+    // 4. Já existir um ID gravado para este chat (evita tocar ao clicar na aba pela 1ª vez)
+    if (!primeiraCargaChat && 
+        dadosUltima.origem !== "Estoque" && 
+        ultimosIdsPorChat[chatParaCarregar] !== "" && 
+        idUltimaNoBanco !== ultimosIdsPorChat[chatParaCarregar]) {
+      
       somNotificacao.play().catch(() => tocarBip());
     }
 
-    // --- RENDERIZAÇÃO DAS MENSAGENS NA TELA ---
+    // Atualiza o ID específico desta aba
+    ultimosIdsPorChat[chatParaCarregar] = idUltimaNoBanco;
+
     snapshot.forEach((child) => {
       const data = child.val();
       const p = document.createElement("p");
@@ -447,12 +461,7 @@ function carregarMensagens() {
     });
 
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-    
-    // IMPORTANTE: Só libera o som após o primeiro carregamento completo
-    if (primeiraCargaChat) {
-        idUltimaMsgTocada = idUltimaNoBanco; // Marca a última do histórico para não apitar nela
-        primeiraCargaChat = false;
-    }
+    primeiraCargaChat = false; 
   });
 }
  
