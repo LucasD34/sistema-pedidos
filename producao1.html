@@ -500,10 +500,19 @@ onValue(pedidosRef, (snap) => {
 // Botão Limpar
 document.getElementById("btnLimpar").onclick = () => form.reset();
 
+// --- NO FINAL DO SCRIPT, SUBSTITUA POR ISSO ---
+
+// 1. Liga o monitor de todas as abas
 monitorarTodasNotificacoes();
-  
-// Inicialização
+
+// 2. Abre a aba inicial
 window.abrirChat('Sonia_Danielly');
+
+// 3. Pequeno atraso para liberar o som (evita apitar mensagens antigas ao abrir o site)
+setTimeout(() => {
+    primeiraCargaChat = false;
+    console.log("Monitor de notificações pronto e ativo!");
+}, 2000);
 </script>
 
 </body>
