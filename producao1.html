@@ -230,17 +230,24 @@ const pedidosRef = ref(db, "pedidos");
 const pendentes = document.getElementById("pendentes");
 const enviados = document.getElementById("enviados");
 const form = document.getElementById("formPedido");
-
 // Variáveis do Chat
 let chatAtual = "Sonia_Danielly";
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
 
- // SOM DO CHAT 
+// SOM DO CHAT 
 const somNotificacao = new Audio("notificacao.mp3?v=" + Date.now());
 let primeiraCargaChat = true;
-let idUltimaMsgTocada = ""; 
+
+// NOVO: Objeto para controlar o som de cada chat individualmente
+let ultimosIdsPorChat = {
+  "Sonia_Danielly": "",
+  "Dalva": "",
+  "Josileide": "",
+  "Creuza": "",
+  "Elane": ""
+};
   
 // Cores das Encarregadas
 const coresConfig = {
@@ -313,20 +320,15 @@ function carregarMensagens() {
 
     const mensagens = snapshot.val();
     if (!mensagens) {
-        caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatParaCarregar.replace('_', '/')}...</p>`;
+        caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes...</p>`;
         return;
     }
 
-    const chaves = Object.keys(mensagens);
-    const idMsgAtual = chaves[chaves.length - 1];
-    const ultimaMsg = mensagens[idMsgAtual];
+    const idMsgAtual = Object.keys(mensagens)[0];
+    // Apenas atualiza o ID para o monitor saber que você já "viu"
+    ultimosIdsPorChat[chatParaCarregar] = idMsgAtual;
 
-    // Lógica do Som
-    if (!primeiraCargaChat && ultimaMsg.origem === "Estoque" && idMsgAtual !== idUltimaMsgTocada) {
-        idUltimaMsgTocada = idMsgAtual;
-        somNotificacao.play().catch(() => tocarBip());
-    }
-
+    // ... (restante do código de buscar 15 mensagens e desenhar na tela continua igual)
     // BUSCA AS 15 MENSAGENS E DESENHA NA TELA
     const msgRefCompleto = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
     onValue(msgRefCompleto, (snapCompleto) => {
@@ -365,36 +367,53 @@ function monitorarTodasNotificacoes() {
   const caminhos = ["Sonia_Danielly", "Dalva", "Josileide", "Creuza", "Elane"];
   
   caminhos.forEach(caminho => {
-    const msgRef = query(ref(db, `chats/${caminho}`), limitToLast(20));
+    // Monitora a última mensagem de cada chat para o SOM
+    const msgRefDinamica = query(ref(db, `chats/${caminho}`), limitToLast(1));
     
-    onValue(msgRef, (snapshot) => {
-      let contador = 0;
+    onValue(msgRefDinamica, (snapshot) => {
+      const dados = snapshot.val();
+      if (!dados) return;
+
+      const idMensagem = Object.keys(dados)[0];
+      const msg = dados[idMensagem];
+
+      // LÓGICA DO SOM: Toca se vier do Estoque e o ID for novo para esta aba
+      if (msg.origem === "Estoque" && ultimosIdsPorChat[caminho] !== "" && idMensagem !== ultimosIdsPorChat[caminho]) {
+        somNotificacao.play().catch(() => tocarBip());
+      }
+      
+      // Atualiza o ID na memória
+      ultimosIdsPorChat[caminho] = idMensagem;
+
+      // LÓGICA DO CONTADOR (BADGE)
       const nomeLimpo = caminho.split('_')[0].toLowerCase();
       const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
       const nomeExibicao = caminho === "Sonia_Danielly" ? "Sonia/Danielly" : caminho;
 
-      snapshot.forEach(child => {
-        const msg = child.val();
-        if (msg.origem === "Estoque" && msg.visualizada === false) {
-          contador++;
-        }
-      });
+      // Conta mensagens não lidas
+      const msgRefCompleto = query(ref(db, `chats/${caminho}`), limitToLast(15));
+      onValue(msgRefCompleto, (snapContas) => {
+        let contador = 0;
+        snapContas.forEach(child => {
+          const m = child.val();
+          if (m.origem === "Estoque" && m.visualizada === false) {
+            contador++;
+          }
+        });
 
-      if (btnAba) {
-        if (contador > 0) {
-          btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
-          btnAba.classList.add('aba-notificacao');
-        } else {
-          btnAba.innerHTML = nomeExibicao;
-          btnAba.classList.remove('aba-notificacao');
+        if (btnAba) {
+          if (contador > 0) {
+            btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
+            btnAba.classList.add('aba-notificacao');
+          } else {
+            btnAba.innerHTML = nomeExibicao;
+            btnAba.classList.remove('aba-notificacao');
+          }
         }
-      }
+      }, { onlyOnce: true });
     });
   });
 }
-
-// 3. Lá no final do seu código, chame a função para começar a monitorar:
-monitorarTodasNotificacoes();
   
 // ===== Função para Abrir Chat =====
 window.abrirChat = (nome) => {
