@@ -308,6 +308,16 @@ function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
   onValue(msgRef, (snapshot) => {
+    // === NOVO: Ajuste de cores automático ao carregar ===
+    const container = document.getElementById("container-chat");
+    const caixaMsgs = document.getElementById("caixa-mensagens");
+    const prefixo = chatAtual.split('_')[0].toLowerCase();
+    
+    // Aplica a cor da borda e do fundo baseada na encarregada atual
+    container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
+    caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
+    // ===================================================
+
     caixaMensagens.innerHTML = "";
     const mensagens = snapshot.val();
 
@@ -323,8 +333,8 @@ function carregarMensagens() {
         p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
       } else {
         p.className = "msg-producao";
-        const prefixo = data.origem.split('_')[0].toLowerCase();
-        const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
+        const prefixoMsg = data.origem.split('_')[0].toLowerCase();
+        const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
         p.style.backgroundColor = cor.bg;
         p.style.border = `2px solid ${cor.border}`;
         p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
@@ -345,7 +355,7 @@ function carregarMensagens() {
     primeiraCargaChat = false;
   });
 }
-
+  
 // 2. ADICIONE ESTA NOVA FUNÇÃO (Ela cuida dos balõezinhos de todas as abas)
 function monitorarTodasNotificacoes() {
   const caminhos = ["Sonia_Danielly", "Dalva", "Josileide", "Creuza", "Elane"];
