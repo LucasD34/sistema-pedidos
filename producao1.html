@@ -302,7 +302,7 @@ function tocarBip() {
     oscillator.stop(context.currentTime + 0.5);
 }  
 
-// ===== Chat: Carregar Mensagens =====
+ // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
@@ -310,12 +310,9 @@ function carregarMensagens() {
     caixaMensagens.innerHTML = "";
     let contadorNaoLidas = 0;
 
-    // 1. Lógica do Contador de Notificações (Badge)
     const mensagens = snapshot.val();
     const nomeLimpo = chatAtual.split('_')[0].toLowerCase();
     const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
-    
-    // Nome correto para exibir no botão (ajuste para o caso da Sonia)
     const nomeExibicao = chatAtual === "Sonia_Danielly" ? "Sonia/Danielly" : chatAtual;
 
     if (mensagens) {
@@ -328,16 +325,18 @@ function carregarMensagens() {
       });
     }
 
-    // Atualiza o visual da aba da encarregada correspondente
-    if (contadorNaoLidas > 0) {
-      btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
-      btnAba.classList.add('aba-notificacao');
-    } else {
-      btnAba.innerHTML = nomeExibicao;
-      btnAba.classList.remove('aba-notificacao');
+    // Atualiza o visual da aba
+    if (btnAba) {
+        if (contadorNaoLidas > 0) {
+          btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
+          btnAba.classList.add('aba-notificacao');
+        } else {
+          btnAba.innerHTML = nomeExibicao;
+          btnAba.classList.remove('aba-notificacao');
+        }
     }
 
-    // 2. Renderização das Mensagens
+    // Renderização das Mensagens
     snapshot.forEach((child) => {
       const data = child.val();
       const p = document.createElement("p");
@@ -352,7 +351,6 @@ function carregarMensagens() {
         p.className = "msg-producao";
         const prefixo = data.origem.split('_')[0].toLowerCase();
         const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
-        
         p.style.backgroundColor = cor.bg;
         p.style.border = `2px solid ${cor.border}`;
         p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
@@ -362,33 +360,20 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    // 3. Marca como lida e toca o som (Seu código original)
+    // Marca como lida
     marcarComoLida(chatAtual);
     
+    // LÓGICA DO SOM
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-      // Se a última mensagem veio do Estoque, toca o bip para avisar a encarregada
       if (ultimaMsg.origem === "Estoque") {
         somNotificacao.play().catch(() => tocarBip());
       }
     }
     primeiraCargaChat = false;
   });
-}
-    // --- LÓGICA DO SOM ---
-    const mensagens = snapshot.val();
-    if (mensagens && !primeiraCargaChat) {
-      const chaves = Object.keys(mensagens);
-      const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-      // Toca se a mensagem vier do Estoque
-      if (ultimaMsg.origem === "Estoque") {
-        somNotificacao.play().catch(() => tocarBip());
-      }
-    }
-    primeiraCargaChat = false;
-  });
-}
+} 
   
 // ===== Função para Abrir Chat =====
 window.abrirChat = (nome) => {
