@@ -446,15 +446,17 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    if (mensagens && !primeiraCargaChat) {
-      const chaves = Object.keys(mensagens);
-      const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-      // Só toca som se a mensagem for pra conversa que está aberta
-      if (ultimaMsg.origem !== "Estoque" && ultimaMsg.origem !== "Sistema") {
-         somNotificacao.play().catch(() => tocarBip());
-      }
-    }
-    primeiraCargaChat = false; 
+    // No ESTOQUE (dentro de carregarMensagens, no final do onValue)
+if (mensagens && !primeiraCargaChat) {
+  const chaves = Object.keys(mensagens);
+  const ultimaMsg = mensagens[chaves[chaves.length - 1]];
+
+  // REGRA: Se a mensagem NÃO veio do Estoque, toca o som
+  if (ultimaMsg.origem !== "Estoque") {
+    somNotificacao.play().catch(() => tocarBip());
+  }
+}
+primeiraCargaChat = false;
   });
 }
  
