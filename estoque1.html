@@ -180,6 +180,30 @@ footer {
 .bg-creuza { background-color: #f9f2fd !important; }
 .bg-elane { background-color: #fdf7f2 !important; }
 
+/* Estilo para o balãozinho de notificação (Badge) */
+.badge-notificacao {
+  background-color: #ff0000;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 5px;
+  display: inline-block;
+  min-width: 10px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.aba-notificacao {
+  animation: pulseBadge 1s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+} 
+ 
 </style>
 </head>
 <body>
@@ -377,14 +401,42 @@ function carregarMensagens() {
   
   onValue(msgRef, (snapshot) => {
     caixaMensagens.innerHTML = "";
+    let contadorNaoLidas = 0;
+
+    // 1. Lógica do Contador de Notificações
+    const mensagens = snapshot.val();
+    const nomeLimpo = chatAtual.split('_')[0].toLowerCase();
+    const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
     
+    // Nome correto para exibir no botão
+    const nomeExibicao = chatAtual === "Sonia_Danielly" ? "Sonia/Danielly" : chatAtual;
+
+    if (mensagens) {
+      Object.keys(mensagens).forEach(key => {
+        const msg = mensagens[key];
+        // Conta se a mensagem NÃO veio de você (Estoque) e não foi lida
+        if (msg.origem !== "Estoque" && msg.visualizada === false) {
+          contadorNaoLidas++;
+        }
+      });
+    }
+
+    // Atualiza o visual da aba (Badge e Animação)
+    if (contadorNaoLidas > 0) {
+      btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
+      btnAba.classList.add('aba-notificacao');
+    } else {
+      btnAba.innerHTML = nomeExibicao;
+      btnAba.classList.remove('aba-notificacao');
+    }
+
+    // 2. Renderização das Mensagens (Seu código original)
     snapshot.forEach((child) => {
       const data = child.val();
       const p = document.createElement("p");
       const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
 
       if (data.origem === "Estoque") {
-        // --- MENSAGENS QUE VOCÊ ENVIA ---
         p.className = "msg-estoque";
         p.style.backgroundColor = "#e1f5fe";
         p.style.border = "2px solid #0b63d6";
@@ -397,7 +449,6 @@ function carregarMensagens() {
           <div style="text-align: right; margin-top: 2px;">${tique}</div>
         `;
       } else {
-        // --- MENSAGENS QUE AS ENCARREGADAS ENVIAM ---
         p.className = "msg-producao";
         const prefixo = data.origem.split('_')[0].toLowerCase();
         const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
@@ -410,23 +461,19 @@ function carregarMensagens() {
           <strong>${data.origem}:</strong> ${data.texto}
         `;
       }
-
       caixaMensagens.appendChild(p);
     });
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
     // --- LÓGICA DE SOM ---
-    const mensagens = snapshot.val();
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-
       if (ultimaMsg.origem !== "Estoque") {
         somNotificacao.play().catch(() => tocarBip());
       }
     }
-    
     primeiraCargaChat = false; 
   });
 }
