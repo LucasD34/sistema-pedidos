@@ -360,7 +360,7 @@ if (mensagens && !primeiraCargaChat) {
   const ultimaMsg = mensagens[chaves[chaves.length - 1]];
 
   // Toca se for do Estoque e o tique de visualizado ainda não existir no dado que acabou de chegar
-  if (ultimaMsg.origem === "Estoque" && ultimaMsg.visualizada === false) {
+  if (ultimaMsg.origem === "Estoque") {
     somNotificacao.play().catch(() => tocarBip());
   }
 }
