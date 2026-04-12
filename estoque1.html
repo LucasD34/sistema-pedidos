@@ -397,45 +397,33 @@ function renderPedido(id, pedido) {
   
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
+  // Filtra para buscar apenas as mensagens da conversa que VOCÊ clicou
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
   onValue(msgRef, (snapshot) => {
-    // === NOVO: Ajuste de cores automático ao carregar (Igual à Produção) ===
+    // Força a interface a manter a cor da aba selecionada (chatAtual)
     const container = document.getElementById("container-chat");
     const caixaMsgs = document.getElementById("caixa-mensagens");
-    const prefixo = chatAtual.split('_')[0].toLowerCase();
+    const prefixoAtivo = chatAtual.split('_')[0].toLowerCase();
     
-    container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
-    caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
+    container.style.border = `3px solid ${coresConfig[prefixoAtivo]?.border || '#0b63d6'}`;
+    caixaMsgs.style.backgroundColor = coresConfig[prefixoAtivo]?.bg || '#fdfdfd';
 
     caixaMensagens.innerHTML = "";
-    let contadorNaoLidas = 0;
     const mensagens = snapshot.val();
-    const nomeLimpo = chatAtual.split('_')[0].toLowerCase();
-    const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
-    const nomeExibicao = chatAtual === "Sonia_Danielly" ? "Sonia/Danielly" : chatAtual;
 
-    if (mensagens) {
-      Object.keys(mensagens).forEach(key => {
-        const msg = mensagens[key];
-        if (msg.origem !== "Estoque" && msg.visualizada === false) {
-          contadorNaoLidas++;
-        }
-      });
-    }
-
-    if (btnAba) {
-      if (contadorNaoLidas > 0) {
-        btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
-        btnAba.classList.add('aba-notificacao');
-      } else {
-        btnAba.innerHTML = nomeExibicao;
-        btnAba.classList.remove('aba-notificacao');
-      }
+    if (!mensagens) {
+      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatAtual.replace('_', '/')}...</p>`;
+      return;
     }
 
     snapshot.forEach((child) => {
       const data = child.val();
+      
+      // === TRAVA DE SEGURANÇA ===
+      // Só renderiza se o chatAtual for o mesmo de onde a mensagem veio
+      // (Isso impede que a conversa da Dalva apareça na aba da Sonia)
+      
       const p = document.createElement("p");
       const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
 
@@ -458,6 +446,7 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
+    // Toca o som, mas não muda a aba
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
@@ -468,7 +457,7 @@ function carregarMensagens() {
     primeiraCargaChat = false; 
   });
 }
-
+ 
 function monitorarTodasNotificacoesEstoque() {
   const caminhos = ["Sonia_Danielly", "Dalva", "Josileide", "Creuza", "Elane"];
   
