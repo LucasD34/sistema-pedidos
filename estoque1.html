@@ -400,37 +400,40 @@ function carregarMensagens() {
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
   onValue(msgRef, (snapshot) => {
+    // === NOVO: Ajuste de cores automático ao carregar (Igual à Produção) ===
+    const container = document.getElementById("container-chat");
+    const caixaMsgs = document.getElementById("caixa-mensagens");
+    const prefixo = chatAtual.split('_')[0].toLowerCase();
+    
+    container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
+    caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
+
     caixaMensagens.innerHTML = "";
     let contadorNaoLidas = 0;
-
-    // 1. Lógica do Contador de Notificações
     const mensagens = snapshot.val();
     const nomeLimpo = chatAtual.split('_')[0].toLowerCase();
     const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
-    
-    // Nome correto para exibir no botão
     const nomeExibicao = chatAtual === "Sonia_Danielly" ? "Sonia/Danielly" : chatAtual;
 
     if (mensagens) {
       Object.keys(mensagens).forEach(key => {
         const msg = mensagens[key];
-        // Conta se a mensagem NÃO veio de você (Estoque) e não foi lida
         if (msg.origem !== "Estoque" && msg.visualizada === false) {
           contadorNaoLidas++;
         }
       });
     }
 
-    // Atualiza o visual da aba (Badge e Animação)
-    if (contadorNaoLidas > 0) {
-      btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
-      btnAba.classList.add('aba-notificacao');
-    } else {
-      btnAba.innerHTML = nomeExibicao;
-      btnAba.classList.remove('aba-notificacao');
+    if (btnAba) {
+      if (contadorNaoLidas > 0) {
+        btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contadorNaoLidas}</span>`;
+        btnAba.classList.add('aba-notificacao');
+      } else {
+        btnAba.innerHTML = nomeExibicao;
+        btnAba.classList.remove('aba-notificacao');
+      }
     }
 
-    // 2. Renderização das Mensagens (Seu código original)
     snapshot.forEach((child) => {
       const data = child.val();
       const p = document.createElement("p");
@@ -440,33 +443,21 @@ function carregarMensagens() {
         p.className = "msg-estoque";
         p.style.backgroundColor = "#e1f5fe";
         p.style.border = "2px solid #0b63d6";
-        
         const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
-
-        p.innerHTML = `
-          <small style="font-size: 11px;">${hora}</small><br>
-          <strong>Estoque:</strong> ${data.texto}
-          <div style="text-align: right; margin-top: 2px;">${tique}</div>
-        `;
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
       } else {
         p.className = "msg-producao";
-        const prefixo = data.origem.split('_')[0].toLowerCase();
-        const cor = coresConfig[prefixo] || { bg: "#e2e3e5", border: "#d6d8db" };
-        
+        const prefixoMsg = data.origem.split('_')[0].toLowerCase();
+        const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
         p.style.backgroundColor = cor.bg;
         p.style.border = `2px solid ${cor.border}`;
-        
-        p.innerHTML = `
-          <small style="font-size: 11px;">${hora}</small><br>
-          <strong>${data.origem}:</strong> ${data.texto}
-        `;
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
       }
       caixaMensagens.appendChild(p);
     });
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    // --- LÓGICA DE SOM ---
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
@@ -477,6 +468,39 @@ function carregarMensagens() {
     primeiraCargaChat = false; 
   });
 }
+
+function monitorarTodasNotificacoesEstoque() {
+  const caminhos = ["Sonia_Danielly", "Dalva", "Josileide", "Creuza", "Elane"];
+  
+  caminhos.forEach(caminho => {
+    const msgRef = query(ref(db, `chats/${caminho}`), limitToLast(20));
+    
+    onValue(msgRef, (snapshot) => {
+      let contador = 0;
+      const nomeLimpo = caminho.split('_')[0].toLowerCase();
+      const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
+      const nomeExibicao = caminho === "Sonia_Danielly" ? "Sonia/Danielly" : caminho;
+
+      snapshot.forEach(child => {
+        const msg = child.val();
+        // No ESTOQUE: conta se a mensagem NÃO veio do Estoque e não foi lida
+        if (msg.origem !== "Estoque" && msg.visualizada === false) {
+          contador++;
+        }
+      });
+
+      if (btnAba) {
+        if (contador > 0) {
+          btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
+          btnAba.classList.add('aba-notificacao');
+        } else {
+          btnAba.innerHTML = nomeExibicao;
+          btnAba.classList.remove('aba-notificacao');
+        }
+      }
+    });
+  });
+} 
  
 // ===== Função Abrir Chat =====
 window.abrirChat = (nome) => {
@@ -568,8 +592,12 @@ btnApagarVarios.onclick = async () => {
   }
 };
 
+// Ativa o vigia de todas as abas
+monitorarTodasNotificacoesEstoque();
+
 // Início
 window.abrirChat('Sonia_Danielly');
+ 
 </script>
 </body>
 </html>
