@@ -304,43 +304,53 @@ function tocarBip() {
 }  
 
  // ===== Chat: Carregar Mensagens ====
-
 function carregarMensagens() {
   const chatParaCarregar = chatAtual;  
-  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(1)); // Buscamos apenas a última
+  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(1)); 
   
   onValue(msgRef, (snapshot) => {
     if (chatParaCarregar !== chatAtual) return;
 
     const mensagens = snapshot.val();
-    if (!mensagens) return;
+    if (!mensagens) {
+        caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatParaCarregar.replace('_', '/')}...</p>`;
+        return;
+    }
 
-    // Pegamos a última mensagem do snapshot
     const chaves = Object.keys(mensagens);
     const idMsgAtual = chaves[chaves.length - 1];
     const ultimaMsg = mensagens[idMsgAtual];
 
-    // LÓGICA DO SOM:
-    // 1. Não pode ser a primeira carga
-    // 2. A origem tem que ser "Estoque" (para a Produção)
-    // 3. O ID da mensagem tem que ser diferente do que já tocou (para não repetir)
+    // Lógica do Som
     if (!primeiraCargaChat && ultimaMsg.origem === "Estoque" && idMsgAtual !== idUltimaMsgTocada) {
-        idUltimaMsgTocada = idMsgAtual; // Salva para não tocar de novo a mesma
+        idUltimaMsgTocada = idMsgAtual;
         somNotificacao.play().catch(() => tocarBip());
     }
 
-    // Após verificar o som, renderizamos todas as 15 mensagens normalmente
+    // BUSCA AS 15 MENSAGENS E DESENHA NA TELA
     const msgRefCompleto = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
     onValue(msgRefCompleto, (snapCompleto) => {
-        // ... (Aqui você mantém o seu código de desenhar as mensagens na tela)
-        // Coloque o caixaMensagens.innerHTML = "" e o snapshot.forEach aqui dentro
-        
         caixaMensagens.innerHTML = "";
+        
         snapCompleto.forEach((child) => {
             const data = child.val();
-            // ... seu código de renderizar <p> ...
             const p = document.createElement("p");
-            // (mantenha sua lógica de cores e estilos aqui)
+            const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
+
+            if (data.origem === "Estoque") {
+                p.className = "msg-estoque";
+                p.style.backgroundColor = "#e1f5fe";
+                p.style.border = "2px solid #0b63d6";
+                const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
+                p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
+            } else {
+                p.className = "msg-producao";
+                const prefixoMsg = data.origem.split('_')[0].toLowerCase();
+                const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
+                p.style.backgroundColor = cor.bg;
+                p.style.border = `2px solid ${cor.border}`;
+                p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+            }
             caixaMensagens.appendChild(p);
         });
         caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
