@@ -354,13 +354,13 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-   // Na PRODUÇÃO (dentro de carregarMensagens, no final do onValue)
+  // Na PRODUÇÃO
 if (mensagens && !primeiraCargaChat) {
   const chaves = Object.keys(mensagens);
   const ultimaMsg = mensagens[chaves[chaves.length - 1]];
 
-  // REGRA: Se a mensagem veio do ESTOQUE, toca o som para a produção
-  if (ultimaMsg.origem === "Estoque") {
+  // Toca se for do Estoque E se ainda não estiver visualizada
+  if (ultimaMsg.origem === "Estoque" && ultimaMsg.visualizada === false) {
     somNotificacao.play().catch(() => tocarBip());
   }
 }
