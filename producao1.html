@@ -240,6 +240,7 @@ const caixaMensagens = document.getElementById("caixa-mensagens");
  // SOM DO CHAT 
 const somNotificacao = new Audio("notificacao.mp3?v=" + Date.now());
 let primeiraCargaChat = true;
+let idUltimaMsgTocada = ""; 
   
 // Cores das Encarregadas
 const coresConfig = {
@@ -302,69 +303,50 @@ function tocarBip() {
     oscillator.stop(context.currentTime + 0.5);
 }  
 
- // ===== Chat: Carregar Mensagens =====
-// 1. Modifique a carregarMensagens para focar apenas no chat aberto
+ // ===== Chat: Carregar Mensagens ====
+
 function carregarMensagens() {
-  // 1. Criamos uma constante local para travar o chat que foi solicitado no momento do clique
-  const chatParaCarregar = chatAtual; 
-  
-  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
+  const chatParaCarregar = chatAtual;  
+  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(1)); // Buscamos apenas a última
   
   onValue(msgRef, (snapshot) => {
-    // 2. CONFERÊNCIA DE SEGURANÇA:
-    // Se por algum motivo o Firebase trouxer dados de um chat que não é o que está aberto agora, ele ignora.
     if (chatParaCarregar !== chatAtual) return;
 
-    const container = document.getElementById("container-chat");
-    const caixaMsgs = document.getElementById("caixa-mensagens");
-    const prefixoAtivo = chatParaCarregar.split('_')[0].toLowerCase();
-    
-    container.style.border = `3px solid ${coresConfig[prefixoAtivo]?.border || '#0b63d6'}`;
-    caixaMsgs.style.backgroundColor = coresConfig[prefixoAtivo]?.bg || '#fdfdfd';
-
-    caixaMensagens.innerHTML = "";
     const mensagens = snapshot.val();
+    if (!mensagens) return;
 
-    if (!mensagens) {
-      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatParaCarregar.replace('_', '/')}...</p>`;
-      return;
+    // Pegamos a última mensagem do snapshot
+    const chaves = Object.keys(mensagens);
+    const idMsgAtual = chaves[chaves.length - 1];
+    const ultimaMsg = mensagens[idMsgAtual];
+
+    // LÓGICA DO SOM:
+    // 1. Não pode ser a primeira carga
+    // 2. A origem tem que ser "Estoque" (para a Produção)
+    // 3. O ID da mensagem tem que ser diferente do que já tocou (para não repetir)
+    if (!primeiraCargaChat && ultimaMsg.origem === "Estoque" && idMsgAtual !== idUltimaMsgTocada) {
+        idUltimaMsgTocada = idMsgAtual; // Salva para não tocar de novo a mesma
+        somNotificacao.play().catch(() => tocarBip());
     }
 
-    snapshot.forEach((child) => {
-      const data = child.val();
-      const p = document.createElement("p");
-      const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
+    // Após verificar o som, renderizamos todas as 15 mensagens normalmente
+    const msgRefCompleto = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
+    onValue(msgRefCompleto, (snapCompleto) => {
+        // ... (Aqui você mantém o seu código de desenhar as mensagens na tela)
+        // Coloque o caixaMensagens.innerHTML = "" e o snapshot.forEach aqui dentro
+        
+        caixaMensagens.innerHTML = "";
+        snapCompleto.forEach((child) => {
+            const data = child.val();
+            // ... seu código de renderizar <p> ...
+            const p = document.createElement("p");
+            // (mantenha sua lógica de cores e estilos aqui)
+            caixaMensagens.appendChild(p);
+        });
+        caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
+    }, { onlyOnce: true });
 
-      if (data.origem === "Estoque") {
-        p.className = "msg-estoque";
-        p.style.backgroundColor = "#e1f5fe";
-        p.style.border = "2px solid #0b63d6";
-        const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
-      } else {
-        p.className = "msg-producao";
-        const prefixoMsg = data.origem.split('_')[0].toLowerCase();
-        const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
-        p.style.backgroundColor = cor.bg;
-        p.style.border = `2px solid ${cor.border}`;
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
-      }
-      caixaMensagens.appendChild(p);
-    });
-    
-    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-
-  // Na PRODUÇÃO (dentro do onValue de carregarMensagens)
-if (mensagens && !primeiraCargaChat) {
-  const chaves = Object.keys(mensagens);
-  const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-
-  // Toca se for do Estoque e o tique de visualizado ainda não existir no dado que acabou de chegar
-  if (ultimaMsg.origem === "Estoque") {
-    somNotificacao.play().catch(() => tocarBip());
-  }
-}
-primeiraCargaChat = false;
+    primeiraCargaChat = false; 
   });
 }
   
