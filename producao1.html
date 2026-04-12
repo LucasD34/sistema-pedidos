@@ -305,14 +305,19 @@ function tocarBip() {
  // ===== Chat: Carregar Mensagens =====
 // 1. Modifique a carregarMensagens para focar apenas no chat aberto
 function carregarMensagens() {
-  // Filtra para buscar apenas as mensagens da conversa que VOCÊ clicou
-  const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
+  // 1. Criamos uma constante local para travar o chat que foi solicitado no momento do clique
+  const chatParaCarregar = chatAtual; 
+  
+  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
   
   onValue(msgRef, (snapshot) => {
-    // Força a interface a manter a cor da aba selecionada (chatAtual)
+    // 2. CONFERÊNCIA DE SEGURANÇA:
+    // Se por algum motivo o Firebase trouxer dados de um chat que não é o que está aberto agora, ele ignora.
+    if (chatParaCarregar !== chatAtual) return;
+
     const container = document.getElementById("container-chat");
     const caixaMsgs = document.getElementById("caixa-mensagens");
-    const prefixoAtivo = chatAtual.split('_')[0].toLowerCase();
+    const prefixoAtivo = chatParaCarregar.split('_')[0].toLowerCase();
     
     container.style.border = `3px solid ${coresConfig[prefixoAtivo]?.border || '#0b63d6'}`;
     caixaMsgs.style.backgroundColor = coresConfig[prefixoAtivo]?.bg || '#fdfdfd';
@@ -321,17 +326,12 @@ function carregarMensagens() {
     const mensagens = snapshot.val();
 
     if (!mensagens) {
-      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatAtual.replace('_', '/')}...</p>`;
+      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatParaCarregar.replace('_', '/')}...</p>`;
       return;
     }
 
     snapshot.forEach((child) => {
       const data = child.val();
-      
-      // === TRAVA DE SEGURANÇA ===
-      // Só renderiza se o chatAtual for o mesmo de onde a mensagem veio
-      // (Isso impede que a conversa da Dalva apareça na aba da Sonia)
-      
       const p = document.createElement("p");
       const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
 
@@ -354,12 +354,12 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-    // Toca o som, mas não muda a aba
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-      if (ultimaMsg.origem !== "Estoque") {
-        somNotificacao.play().catch(() => tocarBip());
+      // Só toca som se a mensagem for pra conversa que está aberta
+      if (ultimaMsg.origem !== "Estoque" && ultimaMsg.origem !== "Sistema") {
+         somNotificacao.play().catch(() => tocarBip());
       }
     }
     primeiraCargaChat = false; 
