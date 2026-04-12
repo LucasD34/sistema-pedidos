@@ -452,7 +452,7 @@ if (mensagens && !primeiraCargaChat) {
   const ultimaMsg = mensagens[chaves[chaves.length - 1]];
 
   // Toca se NÃO for do estoque e ainda não estiver visualizada
-  if (ultimaMsg.origem !== "Estoque" && ultimaMsg.visualizada === false) {
+  if (ultimaMsg.origem !== "Estoque") {
     somNotificacao.play().catch(() => tocarBip());
   }
 }
