@@ -305,24 +305,33 @@ function tocarBip() {
  // ===== Chat: Carregar Mensagens =====
 // 1. Modifique a carregarMensagens para focar apenas no chat aberto
 function carregarMensagens() {
+  // Filtra para buscar apenas as mensagens da conversa que VOCÊ clicou
   const msgRef = query(ref(db, `chats/${chatAtual}`), limitToLast(15));
   
   onValue(msgRef, (snapshot) => {
-    // === NOVO: Ajuste de cores automático ao carregar ===
+    // Força a interface a manter a cor da aba selecionada (chatAtual)
     const container = document.getElementById("container-chat");
     const caixaMsgs = document.getElementById("caixa-mensagens");
-    const prefixo = chatAtual.split('_')[0].toLowerCase();
+    const prefixoAtivo = chatAtual.split('_')[0].toLowerCase();
     
-    // Aplica a cor da borda e do fundo baseada na encarregada atual
-    container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
-    caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
-    // ===================================================
+    container.style.border = `3px solid ${coresConfig[prefixoAtivo]?.border || '#0b63d6'}`;
+    caixaMsgs.style.backgroundColor = coresConfig[prefixoAtivo]?.bg || '#fdfdfd';
 
     caixaMensagens.innerHTML = "";
     const mensagens = snapshot.val();
 
+    if (!mensagens) {
+      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes com ${chatAtual.replace('_', '/')}...</p>`;
+      return;
+    }
+
     snapshot.forEach((child) => {
       const data = child.val();
+      
+      // === TRAVA DE SEGURANÇA ===
+      // Só renderiza se o chatAtual for o mesmo de onde a mensagem veio
+      // (Isso impede que a conversa da Dalva apareça na aba da Sonia)
+      
       const p = document.createElement("p");
       const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
 
@@ -330,7 +339,8 @@ function carregarMensagens() {
         p.className = "msg-estoque";
         p.style.backgroundColor = "#e1f5fe";
         p.style.border = "2px solid #0b63d6";
-        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
+        const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
       } else {
         p.className = "msg-producao";
         const prefixoMsg = data.origem.split('_')[0].toLowerCase();
@@ -343,16 +353,16 @@ function carregarMensagens() {
     });
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-    marcarComoLida(chatAtual);
-    
+
+    // Toca o som, mas não muda a aba
     if (mensagens && !primeiraCargaChat) {
       const chaves = Object.keys(mensagens);
       const ultimaMsg = mensagens[chaves[chaves.length - 1]];
-      if (ultimaMsg.origem === "Estoque") {
+      if (ultimaMsg.origem !== "Estoque") {
         somNotificacao.play().catch(() => tocarBip());
       }
     }
-    primeiraCargaChat = false;
+    primeiraCargaChat = false; 
   });
 }
   
