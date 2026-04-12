@@ -354,12 +354,12 @@ function carregarMensagens() {
     
     caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
 
-  // Na PRODUÇÃO
+  // Na PRODUÇÃO (dentro do onValue de carregarMensagens)
 if (mensagens && !primeiraCargaChat) {
   const chaves = Object.keys(mensagens);
   const ultimaMsg = mensagens[chaves[chaves.length - 1]];
 
-  // Toca se for do Estoque E se ainda não estiver visualizada
+  // Toca se for do Estoque e o tique de visualizado ainda não existir no dado que acabou de chegar
   if (ultimaMsg.origem === "Estoque" && ultimaMsg.visualizada === false) {
     somNotificacao.play().catch(() => tocarBip());
   }
