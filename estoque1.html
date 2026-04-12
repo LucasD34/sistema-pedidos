@@ -18,17 +18,17 @@
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
 
-  .logo-container {
-  width: 100%
-  justify-content: flex-start;/* ou center se quiser centralizar tudo*/
-  display: flex;
-  align-items: center;
-  gap: 35px; /* espaço entre as imagens */
-  margin: 10px 15px;
-  background-color: #ffffff /*fundo branco puro*/
-  margin: 10px;
-}
-
+ .logo-container {
+    width: 100%; /* Adicionado o % */
+    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 35px;
+    background-color: #ffffff; /* Adicionado o ; */
+    margin: 10px 0; /* Unificado as margens */
+    padding: 10px; /* Adicionado um padding para não colar na borda */
+    flex-wrap: wrap; /* Importante: se tiver muito brinquedo, eles pulam linha em vez de quebrar o layout */
+  }
 .logo-container img {
   height: 110px; /* ajusta o tamanho igual pra todas */
   width: auto;
