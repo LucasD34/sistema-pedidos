@@ -377,9 +377,12 @@ function monitorarTodasNotificacoes() {
       const idMensagem = Object.keys(dados)[0];
       const msg = dados[idMensagem];
 
-      // LÓGICA DO SOM: Toca se vier do Estoque e o ID for novo para esta aba
-      if (msg.origem === "Estoque" && ultimosIdsPorChat[caminho] !== "" && idMensagem !== ultimosIdsPorChat[caminho]) {
-        somNotificacao.play().catch(() => tocarBip());
+      // LÓGICA DO SOM: Toca se vier do Estoque e o ID for novo
+      if (msg.origem === "Estoque" && idMensagem !== ultimosIdsPorChat[caminho]) {
+        // Só toca se não for o carregamento inicial do site
+        if (!primeiraCargaChat) {
+           somNotificacao.play().catch(() => tocarBip());
+        }
       }
       
       // Atualiza o ID na memória
@@ -497,6 +500,8 @@ onValue(pedidosRef, (snap) => {
 // Botão Limpar
 document.getElementById("btnLimpar").onclick = () => form.reset();
 
+monitorarTodasNotificacoes();
+  
 // Inicialização
 window.abrirChat('Sonia_Danielly');
 </script>
