@@ -289,14 +289,15 @@ let chatAtual = "Sonia_Danielly";
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
- 
-// Crie a variável logo abaixo das configurações do Firebase
+
 const pedidosExistentes = new Set();
- 
+
 // Som padrão para novas mensagens do chat
 const somNotificacao = new Audio("notificacao.mp3?v=1");
-let primeiraCargaChat = true; // Evita que toque ao carregar o histórico 
-// Criamos um "estoque" de IDs, um para cada chat
+
+// MANTENHA ESTAS DUAS ABAIXO:
+let primeiraCargaChat = true; 
+
 let ultimosIdsPorChat = {
   "Sonia_Danielly": "",
   "Dalva": "",
@@ -421,21 +422,7 @@ function carregarMensagens() {
     const chaves = Object.keys(mensagens);
     const idUltimaNoBanco = chaves[chaves.length - 1];
     const dadosUltima = mensagens[idUltimaNoBanco];
-
-    // --- LÓGICA DO SOM ---
-    // Só toca se:
-    // 1. Não for a primeira carga da página
-    // 2. A mensagem NÃO for do estoque
-    // 3. O ID for diferente do que gravamos para ESTE chat
-    // 4. Já existir um ID gravado para este chat (evita tocar ao clicar na aba pela 1ª vez)
-    if (!primeiraCargaChat && 
-        dadosUltima.origem !== "Estoque" && 
-        ultimosIdsPorChat[chatParaCarregar] !== "" && 
-        idUltimaNoBanco !== ultimosIdsPorChat[chatParaCarregar]) {
-      
-      somNotificacao.play().catch(() => tocarBip());
-    }
-
+   
     // Atualiza o ID específico desta aba
     ultimosIdsPorChat[chatParaCarregar] = idUltimaNoBanco;
 
@@ -468,34 +455,53 @@ function monitorarTodasNotificacoesEstoque() {
   const caminhos = ["Sonia_Danielly", "Dalva", "Josileide", "Creuza", "Elane"];
   
   caminhos.forEach(caminho => {
-    const msgRef = query(ref(db, `chats/${caminho}`), limitToLast(20));
+    const msgRef = query(ref(db, `chats/${caminho}`), limitToLast(1)); // Olha apenas a última mensagem
     
     onValue(msgRef, (snapshot) => {
-      let contador = 0;
+      const dados = snapshot.val();
+      if (!dados) return;
+
+      const idMensagem = Object.keys(dados)[0];
+      const msg = dados[idMensagem];
       const nomeLimpo = caminho.split('_')[0].toLowerCase();
       const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
       const nomeExibicao = caminho === "Sonia_Danielly" ? "Sonia/Danielly" : caminho;
 
-      snapshot.forEach(child => {
-        const msg = child.val();
-        // No ESTOQUE: conta se a mensagem NÃO veio do Estoque e não foi lida
-        if (msg.origem !== "Estoque" && msg.visualizada === false) {
-          contador++;
-        }
-      });
-
-      if (btnAba) {
-        if (contador > 0) {
-          btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
-          btnAba.classList.add('aba-notificacao');
-        } else {
-          btnAba.innerHTML = nomeExibicao;
-          btnAba.classList.remove('aba-notificacao');
-        }
+      // --- LÓGICA DO SOM GLOBAL ---
+      // Se a mensagem não for do estoque E o ID for novo para este chat específico
+      if (msg.origem !== "Estoque" && ultimosIdsPorChat[caminho] !== "" && idMensagem !== ultimosIdsPorChat[caminho]) {
+        // Só toca se NÃO for o chat que já está aberto (porque o abrirChat já marca como lida)
+        // Ou se você quiser que toque mesmo no aberto, remova a condição (chatAtual !== caminho)
+        somNotificacao.play().catch(() => tocarBip());
       }
+
+      // Atualiza o ID na memória para a próxima comparação
+      ultimosIdsPorChat[caminho] = idMensagem;
+
+      // --- LÓGICA DO CONTADOR (BADGE) ---
+      // Aqui fazemos uma nova busca rápida para contar as não lidas
+      const contagemRef = query(ref(db, `chats/${caminho}`), limitToLast(10));
+      onValue(contagemRef, (snapContas) => {
+        let contador = 0;
+        snapContas.forEach(child => {
+          if (child.val().origem !== "Estoque" && child.val().visualizada === false) {
+            contador++;
+          }
+        });
+
+        if (btnAba) {
+          if (contador > 0) {
+            btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
+            btnAba.classList.add('aba-notificacao');
+          } else {
+            btnAba.innerHTML = nomeExibicao;
+            btnAba.classList.remove('aba-notificacao');
+          }
+        }
+      }, { onlyOnce: true });
     });
   });
-} 
+}
  
 // ===== Função Abrir Chat =====
 window.abrirChat = (nome) => {
