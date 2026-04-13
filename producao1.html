@@ -263,13 +263,13 @@ async function marcarComoLida(chat) {
   onValue(msgRef, (snapshot) => {
     snapshot.forEach((child) => {
       const data = child.val();
-      // Se a mensagem veio do Estoque e não está lida, marca como lida
+      // Se a mensagem veio do ESTOQUE e não está lida, a PRODUÇÃO marca como lida
       if (data.origem === "Estoque" && data.visualizada === false) {
         update(ref(db, `chats/${chat}/${child.key}`), { visualizada: true });
       }
     });
   }, { onlyOnce: true });
-}  
+}
 
 // ===== Função de Renderizar Pedido =====
 function renderPedido(id, pedido) {
@@ -334,27 +334,35 @@ function carregarMensagens() {
     onValue(msgRefCompleto, (snapCompleto) => {
         caixaMensagens.innerHTML = "";
         
-        snapCompleto.forEach((child) => {
-            const data = child.val();
-            const p = document.createElement("p");
-            const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
+        // ... dentro da função carregarMensagens, no forEach:
 
-            if (data.origem === "Estoque") {
-                p.className = "msg-estoque";
-                p.style.backgroundColor = "#e1f5fe";
-                p.style.border = "2px solid #0b63d6";
-                const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
-                p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
-            } else {
-                p.className = "msg-producao";
-                const prefixoMsg = data.origem.split('_')[0].toLowerCase();
-                const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
-                p.style.backgroundColor = cor.bg;
-                p.style.border = `2px solid ${cor.border}`;
-                p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
-            }
-            caixaMensagens.appendChild(p);
-        });
+snapCompleto.forEach((child) => {
+    const data = child.val();
+    const p = document.createElement("p");
+    const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
+
+    if (data.origem === "Estoque") {
+        // MENSAGEM RECEBIDA DO ESTOQUE (Sem tiques aqui)
+        p.className = "msg-estoque";
+        p.style.backgroundColor = "#e1f5fe";
+        p.style.border = "2px solid #0b63d6";
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}`;
+    } else {
+        // MENSAGEM ENVIADA PELA PRODUÇÃO (Mostra o tique azul se o Estoque leu)
+        p.className = "msg-producao";
+        const prefixoMsg = data.origem.split('_')[0].toLowerCase();
+        const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
+        p.style.backgroundColor = cor.bg;
+        p.style.border = `2px solid ${cor.border}`;
+        
+        // Lógica do Tique Azul:
+        const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
+        
+        p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
+    }
+    caixaMensagens.appendChild(p);
+});
+      
         caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
     }, { onlyOnce: true });
 
