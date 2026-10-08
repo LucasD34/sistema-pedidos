@@ -223,12 +223,7 @@ footer {
 </div>
 
 <div id="container-chat" style="background: #fff; border: 2px solid #0b63d6; border-radius: 12px; margin: 10px 0 20px 0; overflow: hidden;">
-  <div id="abas-chat" style="display: flex; background: #eef4fb; border-bottom: 1px solid #ccc; overflow-x: auto; padding: 0 5px;">
-  <button class="tab-btn tab-sonia active" onclick="abrirChat('Sonia')">Sonia</button>
-  <button class="tab-btn tab-dalva" onclick="abrirChat('Dalva')">Dalva</button>
-  <button class="tab-btn tab-josileide" onclick="abrirChat('Josileide')">Josileide</button>
-  <button class="tab-btn tab-creuza" onclick="abrirChat('Creuza')">Creuza</button>
-  <button class="tab-btn tab-elane" onclick="abrirChat('Elane')">Elane</button>
+ <div id="abas-chat" style="display: flex; background: #eef4fb; border-bottom: 1px solid #ccc; overflow-x: auto; padding: 0 5px;">
 </div>
 
   <div id="caixa-mensagens" style="height: 150px; overflow-y: auto; padding: 15px; background: #fdfdfd; font-size: 14px;">
@@ -281,43 +276,94 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const pedidosRef = ref(db, "pedidos");
 
-const listaPendentes = document.getElementById("listaPendentes");
-const listaEnviados = document.getElementById("listaEnviados");
-
-// Variáveis do Chat
-let chatAtual = "Sonia";
-const inputMsg = document.getElementById("inputMsg");
-const btnEnviarMsg = document.getElementById("btnEnviarMsg");
-const caixaMensagens = document.getElementById("caixa-mensagens");
+// ===== CONTROLE DE CARREGAMENTO E NOTIFICAÇÕES =====
+let primeiraCargaChat = true;
+let primeiraCargaPedidos = true;
 
 const pedidosExistentes = new Set();
 
-// Som para o CHAT (Recados)
-const somChat = new Audio("notificacao.mp3?v=" + Date.now());
+const listaPendentes = document.getElementById("listaPendentes");
+const listaEnviados = document.getElementById("listaEnviados");
 
-// Som para os PEDIDOS (O despertador que você gosta)
-const somPedido = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
-somPedido.volume = 1.0;
+const caixaMensagens = document.getElementById("caixa-mensagens");
+const inputMsg = document.getElementById("inputMsg");
+const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 
-let primeiraCargaChat = true;
-let primeiraCargaPedidos = true; 
+// ===== CONFIGURAÇÃO CENTRAL DOS CHATS =====
+const chatsConfig = [
+  {
+    nome: "Sonia",
+    classe: "sonia",
+    bg: "#fff0f5",
+    border: "#ff69b4"
+  },
+  {
+    nome: "Dalva",
+    classe: "dalva",
+    bg: "#fdf2f2",
+    border: "#e74c3c"
+  },
+  {
+    nome: "Josileide",
+    classe: "josileide",
+    bg: "#f2fdf6",
+    border: "#2ecc71"
+  },
+  {
+    nome: "Creuza",
+    classe: "creuza",
+    bg: "#f9f2fd",
+    border: "#9b59b6"
+  },
+  {
+    nome: "Elane",
+    classe: "elane",
+    bg: "#fdf7f2",
+    border: "#e67e22"
+  }
+];
 
-let ultimosIdsPorChat = {
-  "Sonia": "",
-  "Dalva": "",
-  "Josileide": "",
-  "Creuza": "",
-  "Elane": ""
-};
- 
-// Cores das Encarregadas (Padronizado com a Produção)
-const coresConfig = {
-  "sonia": { bg: "#fff0f5", border: "#ff69b4" },
-  "dalva": { bg: "#fdf2f2", border: "#e74c3c" },
-  "josileide": { bg: "#f2fdf6", border: "#2ecc71" },
-  "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
-  "elane": { bg: "#fdf7f2", border: "#e67e22" }
-};
+// Chat aberto atualmente
+let chatAtual = "Sonia";
+
+// IDs da última mensagem de cada chat
+let ultimosIdsPorChat = Object.fromEntries(
+  chatsConfig.map(chat => [chat.nome, ""])
+);
+
+// Cores dos chats
+const coresConfig = Object.fromEntries(
+  chatsConfig.map(chat => [
+    chat.classe,
+    {
+      bg: chat.bg,
+      border: chat.border
+    }
+  ])
+);
+
+// ===== GERAR ABAS DOS CHATS =====
+function gerarAbasChats() {
+
+  const abasChat = document.getElementById("abas-chat");
+
+  abasChat.innerHTML = "";
+
+  chatsConfig.forEach((chat, index) => {
+
+    const btn = document.createElement("button");
+
+    btn.className =
+      `tab-btn tab-${chat.classe}` +
+      (index === 0 ? " active" : "");
+
+    btn.textContent = chat.nome;
+
+    btn.onclick = () => abrirChat(chat.nome);
+
+    abasChat.appendChild(btn);
+  });
+}
 
 async function marcarComoLidaEstoque(chat) {
   const msgRef = query(ref(db, `chats/${chat}`), limitToLast(15));
@@ -331,24 +377,42 @@ async function marcarComoLidaEstoque(chat) {
     });
   }, { onlyOnce: true });
 }
+
+// Som para os PEDIDOS
+const somPedido = new Audio(
+  "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+);
+somPedido.volume = 1.0;
  
  // Função que gera um som de "Bip" eletrônico sem precisar de link
 function tocarBip() {
     const context = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
 
-    oscillator.type = "sine"; // Som suave
-    oscillator.frequency.setValueAtTime(880, context.currentTime); // Frequência do som
-    
-    gain.gain.setValueAtTime(0.4, context.currentTime); // Volume (0.1 é baixo)
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.5);
+    let quantidadeBips = 5;
+    let intervalo = 450; // tempo entre cada bip
 
-    oscillator.connect(gain);
-    gain.connect(context.destination);
+    for (let i = 0; i < quantidadeBips; i++) {
+        setTimeout(() => {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
 
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.5);
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(1000, context.currentTime);
+
+            // Volume mais forte
+            gain.gain.setValueAtTime(0.8, context.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                context.currentTime + 0.35
+            );
+
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+
+            oscillator.start();
+            oscillator.stop(context.currentTime + 0.35);
+        }, i * intervalo);
+    }
 }
 
 // ===== Função de Renderizar Pedido =====
@@ -527,9 +591,9 @@ function carregarMensagens() {
 }
  
 function monitorarTodasNotificacoesEstoque() {
-  const caminhos = ["Sonia", "Dalva", "Josileide", "Creuza", "Elane"];
-  
-  caminhos.forEach(caminho => {
+  chatsConfig.forEach(chat => {
+
+  const caminho = chat.nome;
     const msgRef = query(ref(db, `chats/${caminho}`), limitToLast(1));
     
     onValue(msgRef, (snapshot) => {
@@ -547,7 +611,7 @@ function monitorarTodasNotificacoesEstoque() {
       // LÓGICA DO SOM DE CHAT
       if (msg.origem !== "Estoque" && idMensagem !== ultimosIdsPorChat[caminho]) {
         if (!primeiraCargaChat) {
-          somChat.play().catch(() => tocarBip());
+           tocarBip();
         }
       }
 
@@ -586,10 +650,21 @@ window.abrirChat = (nome) => {
   const caixaMsgs = document.getElementById("caixa-mensagens");
   const prefixo = nome.split('_')[0].toLowerCase();
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    const nomeBotao = btn.getAttribute('onclick').match(/'([^']+)'/)[1];
-    btn.classList.toggle('active', nomeBotao === nome);
-  });
+ document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.classList.remove('active');
+});
+
+const chatConfig = chatsConfig.find(chat => chat.nome === nome);
+
+if (chatConfig) {
+  const btnAtivo = document.querySelector(
+    `.tab-${chatConfig.classe}`
+  );
+
+  if (btnAtivo) {
+    btnAtivo.classList.add('active');
+  }
+}
 
   container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
   caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
@@ -619,9 +694,12 @@ onChildAdded(pedidosRef, (snap) => {
   if (!pedidosExistentes.has(id)) {
     pedidosExistentes.add(id);
     // Toca o despertador apenas para novos pedidos após o carregamento
-    if (!primeiraCargaPedidos) {
-      somPedido.play().catch(() => tocarBip());
-    }
+   if (!primeiraCargaPedidos) {
+  somPedido.currentTime = 0;
+  somPedido.play().catch(err => {
+    console.log("Não foi possível tocar o som do pedido:", err);
+  });
+ }
   }
 });
 
@@ -670,10 +748,13 @@ btnApagarVarios.onclick = async () => {
   }
 };
 
-// Ativa o vigia de todas as abas
+// 1. Gera as abas dos chats
+gerarAbasChats();
+
+// 2. Liga o monitor de todas as abas
 monitorarTodasNotificacoesEstoque();
 
-// Início
+// 3. Abre a aba inicial
 window.abrirChat('Sonia');
 
 // Libera os sons após 2 segundos (evita barulho de coisas antigas)
