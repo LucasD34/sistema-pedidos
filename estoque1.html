@@ -407,56 +407,123 @@ function renderPedido(id, pedido) {
   div.appendChild(btnApagar);
 }
   
+// ===== Controle do listener do chat =====
+let listenerMensagensCompletas = null;
+
 // ===== Chat: Carregar Mensagens =====
 function carregarMensagens() {
-  const chatParaCarregar = chatAtual;
-  const msgRef = query(ref(db, `chats/${chatParaCarregar}`), limitToLast(15));
 
-  onValue(msgRef, (snapshot) => {
-    if (chatParaCarregar !== chatAtual) return;
-
-    const mensagens = snapshot.val();
-    caixaMensagens.innerHTML = "";
-
-    if (!mensagens) {
-      caixaMensagens.innerHTML = `<p style="color: #888;">Sem mensagens recentes...</p>`;
-      return;
-    }
-
-    const chaves = Object.keys(mensagens);
-    const idUltimaNoBanco = chaves[chaves.length - 1];
-    const dadosUltima = mensagens[idUltimaNoBanco];
-   
-    // Atualiza o ID específico desta aba
-    ultimosIdsPorChat[chatParaCarregar] = idUltimaNoBanco;
-
-    snapshot.forEach((child) => {
-  const data = child.val();
-  const p = document.createElement("p");
-  const hora = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : "";
-
-  if (data.origem === "Estoque") {
-    // MENSAGEM DO ESTOQUE: Mostra se a Produção já visualizou
-    p.className = "msg-estoque";
-    p.style.cssText = "background: #d1e7dd; padding: 5px 10px; border-radius: 8px; margin-bottom: 5px; text-align: right; margin-left: 20%; border: 1px solid #bcd0c7;";
-    
-    // Tique azul aparece aqui quando data.visualizada for true
-    const tique = data.visualizada ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>' : '<span style="color: #888; margin-left: 5px;">✓</span>';
-    
-    p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>Estoque:</strong> ${data.texto}<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
-  } else {
-    // MENSAGEM DA PRODUÇÃO: Sem tiques (quem enviou é quem precisa ver)
-    p.className = "msg-producao";
-    const prefixoMsg = data.origem.split('_')[0].toLowerCase();
-    const cor = coresConfig[prefixoMsg] || { bg: "#e2e3e5", border: "#d6d8db" };
-    p.style.cssText = `background: ${cor.bg}; padding: 5px 10px; border-radius: 8px; margin-bottom: 5px; text-align: left; margin-right: 20%; border: 2px solid ${cor.border};`;
-    p.innerHTML = `<small style="font-size: 11px;">${hora}</small><br><strong>${data.origem}:</strong> ${data.texto}`;
+  // Remove o listener do chat anterior
+  if (listenerMensagensCompletas) {
+    listenerMensagensCompletas();
+    listenerMensagensCompletas = null;
   }
-  caixaMensagens.appendChild(p);
-});
-    caixaMensagens.scrollTop = caixaMensagens.scrollHeight;
-    primeiraCargaChat = false; 
-  });
+
+  const chatParaCarregar = chatAtual;
+
+  // Escuta diretamente as 15 mensagens mais recentes
+  const msgRef = query(
+    ref(db, `chats/${chatParaCarregar}`),
+    limitToLast(15)
+  );
+
+  const unsubscribeMensagens = onValue(
+    msgRef,
+    (snapshot) => {
+
+      // Se o usuário mudou de chat, ignora esta atualização
+      if (chatParaCarregar !== chatAtual) return;
+
+      // Se não existem mensagens
+      if (!snapshot.exists()) {
+        caixaMensagens.innerHTML =
+          `<p style="color: #888;">Sem mensagens recentes...</p>`;
+        return;
+      }
+
+      caixaMensagens.innerHTML = "";
+
+      snapshot.forEach((child) => {
+
+        const data = child.val();
+
+        // Guarda o último ID conhecido
+        ultimosIdsPorChat[chatParaCarregar] = child.key;
+
+        const p = document.createElement("p");
+
+        const hora = data.timestamp
+          ? new Date(data.timestamp).toLocaleTimeString(
+              'pt-BR',
+              {
+                hour: '2-digit',
+                minute: '2-digit'
+              }
+            )
+          : "";
+
+        if (data.origem === "Estoque") {
+
+          // MENSAGEM DO ESTOQUE
+          p.className = "msg-estoque";
+
+          p.style.cssText =
+            "background: #d1e7dd; " +
+            "padding: 5px 10px; " +
+            "border-radius: 8px; " +
+            "margin-bottom: 5px; " +
+            "text-align: right; " +
+            "margin-left: 20%; " +
+            "border: 1px solid #bcd0c7;";
+
+          const tique = data.visualizada
+            ? '<span style="color: #007bff; font-weight: bold; margin-left: 5px;">✓✓</span>'
+            : '<span style="color: #888; margin-left: 5px;">✓</span>';
+
+          p.innerHTML =
+            `<small style="font-size: 11px;">${hora}</small><br>` +
+            `<strong>Estoque:</strong> ${data.texto}` +
+            `<div style="text-align: right; margin-top: 2px;">${tique}</div>`;
+
+        } else {
+
+          // MENSAGEM DA PRODUÇÃO
+          p.className = "msg-producao";
+
+          const prefixoMsg =
+            data.origem.split('_')[0].toLowerCase();
+
+          const cor =
+            coresConfig[prefixoMsg] || {
+              bg: "#e2e3e5",
+              border: "#d6d8db"
+            };
+
+          p.style.cssText =
+            `background: ${cor.bg}; ` +
+            "padding: 5px 10px; " +
+            "border-radius: 8px; " +
+            "margin-bottom: 5px; " +
+            "text-align: left; " +
+            "margin-right: 20%; " +
+            `border: 2px solid ${cor.border};`;
+
+          p.innerHTML =
+            `<small style="font-size: 11px;">${hora}</small><br>` +
+            `<strong>${data.origem}:</strong> ${data.texto}`;
+        }
+
+        caixaMensagens.appendChild(p);
+      });
+
+      caixaMensagens.scrollTop =
+        caixaMensagens.scrollHeight;
+
+      primeiraCargaChat = false;
+    }
+  );
+
+  listenerMensagensCompletas = unsubscribeMensagens;
 }
  
 function monitorarTodasNotificacoesEstoque() {
