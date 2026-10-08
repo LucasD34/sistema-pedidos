@@ -475,7 +475,7 @@ function monitorarTodasNotificacoesEstoque() {
       // Definição das variáveis necessárias para o contador e som
       const nomeLimpo = caminho.split('_')[0].toLowerCase();
       const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
-      const nomeExibicao = caminho === "Sonia_Danielly" ? "Sonia/Danielly" : caminho;
+      const nomeExibicao = caminho;
 
       // LÓGICA DO SOM DE CHAT
       if (msg.origem !== "Estoque" && idMensagem !== ultimosIdsPorChat[caminho]) {
@@ -607,7 +607,7 @@ btnApagarVarios.onclick = async () => {
 monitorarTodasNotificacoesEstoque();
 
 // Início
-window.abrirChat('Sonia_Danielly');
+window.abrirChat('Sonia');
 
 // Libera os sons após 2 segundos (evita barulho de coisas antigas)
 setTimeout(() => {
