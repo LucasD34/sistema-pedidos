@@ -165,11 +165,6 @@ button:hover { opacity: 0.9; }
 
 <div id="container-chat" style="background: #fff; border: 2px solid #0b63d6; border-radius: 12px; margin-bottom: 20px; overflow: hidden;">
   <div id="abas-chat" style="display: flex; background: #eef4fb; border-bottom: 1px solid #ccc; overflow-x: auto;">
-  <button class="tab-btn tab-sonia active" onclick="abrirChat('Sonia')">Sonia</button>
-  <button class="tab-btn tab-dalva" onclick="abrirChat('Dalva')">Dalva</button>
-  <button class="tab-btn tab-josileide" onclick="abrirChat('Josileide')">Josileide</button>
-  <button class="tab-btn tab-creuza" onclick="abrirChat('Creuza')">Creuza</button>
-  <button class="tab-btn tab-elane" onclick="abrirChat('Elane')">Elane</button>
 </div>
 
   <div id="caixa-mensagens" style="height: 150px; overflow-y: auto; padding: 15px; background: #fdfdfd; font-size: 14px;">
@@ -230,8 +225,44 @@ const pedidosRef = ref(db, "pedidos");
 const pendentes = document.getElementById("pendentes");
 const enviados = document.getElementById("enviados");
 const form = document.getElementById("formPedido");
-// Variáveis do Chat
+
+// ===== CONFIGURAÇÃO CENTRAL DOS CHATS =====
+const chatsConfig = [
+  {
+    nome: "Sonia",
+    classe: "sonia",
+    bg: "#fff0f5",
+    border: "#ff69b4"
+  },
+  {
+    nome: "Dalva",
+    classe: "dalva",
+    bg: "#fdf2f2",
+    border: "#e74c3c"
+  },
+  {
+    nome: "Josileide",
+    classe: "josileide",
+    bg: "#f2fdf6",
+    border: "#2ecc71"
+  },
+  {
+    nome: "Creuza",
+    classe: "creuza",
+    bg: "#f9f2fd",
+    border: "#9b59b6"
+  },
+  {
+    nome: "Elane",
+    classe: "elane",
+    bg: "#fdf7f2",
+    border: "#e67e22"
+  }
+];
+
+// Chat aberto atualmente
 let chatAtual = "Sonia";
+
 const inputMsg = document.getElementById("inputMsg");
 const btnEnviarMsg = document.getElementById("btnEnviarMsg");
 const caixaMensagens = document.getElementById("caixa-mensagens");
@@ -241,22 +272,43 @@ const somNotificacao = new Audio("notificacao.mp3?v=" + Date.now());
 let primeiraCargaChat = true;
 
 // NOVO: Objeto para controlar o som de cada chat individualmente
-let ultimosIdsPorChat = {
-  "Sonia": "",
-  "Dalva": "",
-  "Josileide": "",
-  "Creuza": "",
-  "Elane": ""
-};
+let ultimosIdsPorChat = Object.fromEntries(
+  chatsConfig.map(chat => [chat.nome, ""])
+);
   
 // Cores das Encarregadas
-const coresConfig = {
-  "sonia": { bg: "#fff0f5", border: "#ff69b4" },
-  "dalva": { bg: "#fdf2f2", border: "#e74c3c" },
-  "josileide": { bg: "#f2fdf6", border: "#2ecc71" },
-  "creuza": { bg: "#f9f2fd", border: "#9b59b6" },
-  "elane": { bg: "#fdf7f2", border: "#e67e22" }
-};
+const coresConfig = Object.fromEntries(
+  chatsConfig.map(chat => [
+    chat.classe,
+    {
+      bg: chat.bg,
+      border: chat.border
+    }
+  ])
+);
+
+// ===== GERAR ABAS DOS CHATS =====
+function gerarAbasChats() {
+
+  const abasChat = document.getElementById("abas-chat");
+
+  abasChat.innerHTML = "";
+
+  chatsConfig.forEach((chat, index) => {
+
+    const btn = document.createElement("button");
+
+    btn.className =
+      `tab-btn tab-${chat.classe}` +
+      (index === 0 ? " active" : "");
+
+    btn.textContent = chat.nome;
+
+    btn.onclick = () => abrirChat(chat.nome);
+
+    abasChat.appendChild(btn);
+  });
+}  
 
 async function marcarComoLida(chat) {
   const msgRef = query(ref(db, `chats/${chat}`), limitToLast(15));
@@ -427,11 +479,12 @@ function carregarMensagens() {
   // Guarda o listener para poder removê-lo ao trocar de chat
   listenerMensagensCompletas = unsubscribeMensagens;
 }  
-// 2. ADICIONE ESTA NOVA FUNÇÃO (Ela cuida dos balõezinhos de todas as abas)
+//(Ela cuida dos balõezinhos de todas as abas)
 function monitorarTodasNotificacoes() {
-  const caminhos = ["Sonia", "Dalva", "Josileide", "Creuza", "Elane"];
-  
-  caminhos.forEach(caminho => {
+
+  chatsConfig.forEach(chat => {
+
+    const caminho = chat.nome;
     // Monitora a última mensagem de cada chat para o SOM
     const msgRefDinamica = query(ref(db, `chats/${caminho}`), limitToLast(1));
     
@@ -493,8 +546,20 @@ window.abrirChat = (nome) => {
   const prefixo = nome.split('_')[0].toLowerCase();
 
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${nome}'`));
-  });
+  btn.classList.remove('active');
+});
+
+const chatConfig = chatsConfig.find(chat => chat.nome === nome);
+
+if (chatConfig) {
+  const btnAtivo = document.querySelector(
+    `.tab-${chatConfig.classe}`
+  );
+
+  if (btnAtivo) {
+    btnAtivo.classList.add('active');
+  }
+}
 
   container.style.border = `3px solid ${coresConfig[prefixo]?.border || '#0b63d6'}`;
   caixaMsgs.style.backgroundColor = coresConfig[prefixo]?.bg || '#fdfdfd';
@@ -565,15 +630,16 @@ onValue(pedidosRef, (snap) => {
 // Botão Limpar
 document.getElementById("btnLimpar").onclick = () => form.reset();
 
-// --- NO FINAL DO SCRIPT, SUBSTITUA POR ISSO ---
+// 1. Gera as abas dos chats
+gerarAbasChats();
 
-// 1. Liga o monitor de todas as abas
+// 2. Liga o monitor de todas as abas
 monitorarTodasNotificacoes();
 
-// 2. Abre a aba inicial
+// 3. Abre a aba inicial
 window.abrirChat('Sonia');
 
-// 3. Pequeno atraso para liberar o som (evita apitar mensagens antigas ao abrir o site)
+// 4. Pequeno atraso para liberar o som (evita apitar mensagens antigas ao abrir o site)
 setTimeout(() => {
     primeiraCargaChat = false;
     console.log("Monitor de notificações pronto e ativo!");
