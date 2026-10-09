@@ -185,7 +185,7 @@ button:hover { opacity: 0.9; }
   <form id="formPedido">
     <input id="encarregada" type="text" placeholder="👩‍🏭 Encarregada" required>
     <input id="peca" type="text" placeholder="🧩 Peça" required>
-    <input id="referencia" type="tel" placeholder="📌 Referência(APENAS NÚMEROS)" required>
+    <input id="referencia" type="text" inputmode="tel" placeholder="📌 Referência(APENAS NÚMEROS E SÍMBOLOS)" oninput="this.value = this.value.replace(/[^0-9/:.,-]/g, '')" required>
     <textarea id="observacao" rows="2" placeholder="📝 Observação (opcional)"></textarea>
     <div class="botoes">
       <button class="btn-enviar" type="submit">📨 Enviar Pedido</button>
@@ -400,10 +400,11 @@ function carregarMensagens() {
 
       snapshot.forEach((child) => {
 
-        const data = child.val();
+        
+const data = child.val();
 
-        // Guarda o último ID conhecido
-        ultimosIdsPorChat[chatParaCarregar] = child.key;
+// Guarda o último ID conhecido
+ultimosIdsPorChat[chatParaCarregar] = child.key;
 
         const p = document.createElement("p");
 
@@ -478,16 +479,20 @@ function carregarMensagens() {
 
   // Guarda o listener para poder removê-lo ao trocar de chat
   listenerMensagensCompletas = unsubscribeMensagens;
-}  
-//(Ela cuida dos balõezinhos de todas as abas)
+} 
+ 
+//Ela cuida dos balõezinhos de todas as abas
+
 function monitorarTodasNotificacoes() {
-
   chatsConfig.forEach(chat => {
-
     const caminho = chat.nome;
-    // Monitora a última mensagem de cada chat para o SOM
-    const msgRefDinamica = query(ref(db, `chats/${caminho}`), limitToLast(1));
-    
+
+    // Monitora a última mensagem para manter o som atual
+    const msgRefDinamica = query(
+      ref(db, `chats/${caminho}`),
+      limitToLast(1)
+    );
+
     onValue(msgRefDinamica, (snapshot) => {
       const dados = snapshot.val();
       if (!dados) return;
@@ -495,43 +500,51 @@ function monitorarTodasNotificacoes() {
       const idMensagem = Object.keys(dados)[0];
       const msg = dados[idMensagem];
 
-      // LÓGICA DO SOM: Toca se vier do Estoque e o ID for novo
-      if (msg.origem === "Estoque" && idMensagem !== ultimosIdsPorChat[caminho]) {
-        // Só toca se não for o carregamento inicial do site
+      if (
+        msg.origem === "Estoque" &&
+        idMensagem !== ultimosIdsPorChat[caminho]
+      ) {
         if (!primeiraCargaChat) {
-           somNotificacao.play().catch(() => tocarBip());
+          somNotificacao.play().catch(() => tocarBip());
         }
       }
-      
-      // Atualiza o ID na memória
-      ultimosIdsPorChat[caminho] = idMensagem;
 
-      // LÓGICA DO CONTADOR (BADGE)
+      ultimosIdsPorChat[caminho] = idMensagem;
+    });
+
+    // Contador atualizado continuamente para cada conversa
+    const msgRefCompleto = query(
+      ref(db, `chats/${caminho}`),
+      limitToLast(15)
+    );
+
+    onValue(msgRefCompleto, (snapContas) => {
+      let contador = 0;
+
+      snapContas.forEach(child => {
+        const m = child.val();
+
+        if (
+          m.origem === "Estoque" &&
+          m.visualizada === false
+        ) {
+          contador++;
+        }
+      });
+
       const nomeLimpo = caminho.split('_')[0].toLowerCase();
       const btnAba = document.querySelector(`.tab-${nomeLimpo}`);
-      const nomeExibicao = caminho;
 
-      // Conta mensagens não lidas
-      const msgRefCompleto = query(ref(db, `chats/${caminho}`), limitToLast(15));
-      onValue(msgRefCompleto, (snapContas) => {
-        let contador = 0;
-        snapContas.forEach(child => {
-          const m = child.val();
-          if (m.origem === "Estoque" && m.visualizada === false) {
-            contador++;
-          }
-        });
+      if (!btnAba) return;
 
-        if (btnAba) {
-          if (contador > 0) {
-            btnAba.innerHTML = `${nomeExibicao} <span class="badge-notificacao">${contador}</span>`;
-            btnAba.classList.add('aba-notificacao');
-          } else {
-            btnAba.innerHTML = nomeExibicao;
-            btnAba.classList.remove('aba-notificacao');
-          }
-        }
-      }, { onlyOnce: true });
+      if (contador > 0) {
+        btnAba.innerHTML =
+          `${caminho} <span class="badge-notificacao">${contador}</span>`;
+        btnAba.classList.add("aba-notificacao");
+      } else {
+        btnAba.innerHTML = caminho;
+        btnAba.classList.remove("aba-notificacao");
+      }
     });
   });
 }
@@ -567,19 +580,49 @@ if (chatConfig) {
   carregarMensagens();
 };
 
-// ===== Enviar Mensagem do Chat =====
-btnEnviarMsg.onclick = async () => {
+
+ // ===== Enviar Mensagem do Chat =====
+let enviandoMensagem = false;
+
+async function enviarMensagem() {
   const texto = inputMsg.value.trim();
-  const nomeAuto = chatAtual.split('_')[0];
-  if (!texto) return;
-  await push(ref(db, `chats/${chatAtual}`), { 
-    texto, 
-    origem: nomeAuto, 
-    timestamp: Date.now(),
-    visualizada: false 
-  });
-  inputMsg.value = "";
-};
+
+  // Impede mensagens vazias e envios duplicados
+  if (!texto || enviandoMensagem) return;
+
+  enviandoMensagem = true;
+  btnEnviarMsg.disabled = true;
+
+  try {
+    const nomeAuto = chatAtual.split('_')[0];
+
+    await push(ref(db, `chats/${chatAtual}`), {
+      texto,
+      origem: nomeAuto,
+      timestamp: Date.now(),
+      visualizada: false
+    });
+
+    inputMsg.value = "";
+  } catch (erro) {
+    console.error("Erro ao enviar mensagem:", erro);
+    alert("Não foi possível enviar a mensagem. Tente novamente.");
+  } finally {
+    enviandoMensagem = false;
+    btnEnviarMsg.disabled = false;
+    inputMsg.focus();
+  }
+}
+
+btnEnviarMsg.onclick = enviarMensagem;
+
+// Enter envia; Shift + Enter permite pular linha
+inputMsg.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter" && !evento.shiftKey) {
+    evento.preventDefault();
+    enviarMensagem();
+  }
+});
 
 // ===== Formulário de Pedidos (ÚNICO) =====
 form.onsubmit = async (e) => {
@@ -587,9 +630,10 @@ form.onsubmit = async (e) => {
   const inputRef = document.getElementById("referencia");
   const valorRef = inputRef.value.trim();
 
-  // Validação de números
-  if (!/^\d+$/.test(valorRef)) {
-    alert("⚠️ Atenção: No campo Referência, digite apenas números!");
+ 
+  // Validação de números e símbolos permitidos
+  if (!/^[0-9/:.,-]+$/.test(valorRef)) {
+    alert("⚠️ Atenção: No campo Referência, digite apenas números e símbolos (/ : . , -)!");
     inputRef.focus();
     return;
   }
