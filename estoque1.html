@@ -672,19 +672,47 @@ if (chatConfig) {
   carregarMensagens();
 };
 
-// Enviar Mensagem
-btnEnviarMsg.onclick = async () => {
+
+ // ===== Enviar Mensagem do Chat =====
+let enviandoMensagem = false;
+
+async function enviarMensagem() {
   const texto = inputMsg.value.trim();
-  if (!texto) return;
-  
-  await push(ref(db, `chats/${chatAtual}`), { 
-    texto, 
-    origem: "Estoque", 
-    timestamp: Date.now(),
-    visualizada: false // <--- ADICIONE ISSO
-  });
-  inputMsg.value = "";
-};
+
+  // Impede mensagens vazias e envios duplicados
+  if (!texto || enviandoMensagem) return;
+
+  enviandoMensagem = true;
+  btnEnviarMsg.disabled = true;
+
+  try {
+    await push(ref(db, `chats/${chatAtual}`), {
+      texto,
+      origem: "Estoque",
+      timestamp: Date.now(),
+      visualizada: false
+    });
+
+    inputMsg.value = "";
+  } catch (erro) {
+    console.error("Erro ao enviar mensagem:", erro);
+    alert("Não foi possível enviar a mensagem. Tente novamente.");
+  } finally {
+    enviandoMensagem = false;
+    btnEnviarMsg.disabled = false;
+    inputMsg.focus();
+  }
+}
+
+btnEnviarMsg.onclick = enviarMensagem;
+
+// Enter envia a mensagem
+inputMsg.addEventListener("keydown", (evento) => {
+  if (evento.key === "Enter") {
+    evento.preventDefault();
+    enviarMensagem();
+  }
+});
 
 // ====== Sincronização em Tempo Real ======
 onChildAdded(pedidosRef, (snap) => {
